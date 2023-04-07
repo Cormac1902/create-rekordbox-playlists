@@ -4,6 +4,21 @@ import subprocess
 
 from MediaInfo import MediaInfo
 
+TAGS_TO_LOAD = [
+    'title',
+    'artist',
+    'display_artist',
+    'album_artist',
+    'album',
+    'track',
+    'tracktotal',
+    'disc',
+    'disctotal',
+    'organization',
+    'genre',
+    'involvedpeople'
+]
+
 
 def get_tag(tags, tag):
     return tags.get(tag) or tags.get(tag.upper())
@@ -11,6 +26,9 @@ def get_tag(tags, tag):
 
 class MediaInfoMetadata(MediaInfo):
     metadata = dict()
+
+    def get(self, key):
+        return self.metadata.get(key)
 
     def get_metadata(self):
         if not os.path.exists(self.filename) or not os.path.exists(self.cmd):
@@ -29,11 +47,8 @@ class MediaInfoMetadata(MediaInfo):
 
         tags = info_dict.get('format').get('tags')
 
-        self.metadata['album_artist'] = get_tag(tags, 'album_artist')
-        self.metadata['album'] = get_tag(tags, 'album')
-        self.metadata['track'] = get_tag(tags, 'track')
-        self.metadata['disc'] = get_tag(tags, 'disc')
-        self.metadata['title'] = get_tag(tags, 'title')
+        for tag in TAGS_TO_LOAD:
+            self.metadata[tag] = get_tag(tags, tag)
 
     def _run_ffprobe(self) -> str:
         cmd = '"' + self.cmd + \
