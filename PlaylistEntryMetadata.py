@@ -1,4 +1,5 @@
 import os
+import sys
 
 from pathvalidate import sanitize_filepath
 
@@ -21,8 +22,10 @@ class PlaylistEntryMetadata:
         self.title = metadata.get('title')
 
     def filename(self) -> str:
+        filepath = os.sep.join([self.album_artist, self.album,
+                                ' '.join(['-'.join([str(self.disc), f"{self.track:02d}"]), self.title])])
+
         return sanitize_filepath(
-            os.sep.join([self.album_artist, self.album,
-                         ' '.join(['-'.join([str(self.disc), f"{self.track:02d}"]), self.title])]),
+            filepath if sys.platform != 'win32' else filepath.replace(':', ' '),
             replacement_text=' ',
             platform='auto')
