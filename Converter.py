@@ -1,5 +1,5 @@
 import os
-from pathlib import WindowsPath
+from pathlib import Path
 
 from ffmpeg.asyncio import FFmpeg
 
@@ -8,8 +8,7 @@ import PlaylistEntry
 
 
 async def _run_ffmpeg(ffmpeg: FFmpeg, output_location):
-    # TODO: Directories with . in the path
-    WindowsPath("\\\\?\\" + os.path.split(output_location)[0]).mkdir(parents=True, exist_ok=True)
+    Path(os.path.split(output_location)[0]).mkdir(parents=True, exist_ok=True)
     # TODO: Filenames with " in the name
     await ffmpeg.execute()
 
