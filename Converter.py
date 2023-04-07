@@ -22,7 +22,7 @@ def _copy_tag(file: taglib.File, tag: str, metadata: MediaInfoMetadata, make_lis
 
 
 async def _tag(metadata: PlaylistEntryMetadata, output_location):
-    print('Updating tags: ' + output_location)
+    print(f"Updating tags: {output_location}")
     with taglib.File(output_location, save_on_exit=True) as file:
         for tag in TAGS_TO_LOAD:
             _copy_tag(file, tag, metadata.raw_metadata, tag not in ['artist', 'genre', 'producer'])
@@ -32,7 +32,7 @@ async def convert(playlist_entry: PlaylistEntry, output_root):
     conversion_type = playlist_entry.conversion_type
 
     if ConversionType.NONE in conversion_type:
-        print('No processing needed for: ' + playlist_entry.file)
+        print(f"No processing needed for: {playlist_entry.file}")
         return
 
     output_location = playlist_entry.transcoded_file(output_root)
@@ -65,7 +65,7 @@ async def convert(playlist_entry: PlaylistEntry, output_root):
 
         output_location = playlist_entry.transcoded_file(output_root)
 
-        print(message + ': ' + playlist_entry.file)
+        print(f"{message}: {playlist_entry.file}")
         await _run_ffmpeg(ffmpeg, output_location)
 
     await _tag(playlist_entry.metadata, output_location)
