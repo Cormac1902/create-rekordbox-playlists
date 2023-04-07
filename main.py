@@ -1,9 +1,13 @@
+import asyncio
 import os
 import re
 import sys
 
 import soundfile
 
+import Converter
+
+from ConversionTypeEnum import ConversionType
 from MediaInfoMetadata import MediaInfoMetadata
 from Playlist import Playlist
 from PlaylistEntry import PlaylistEntry
@@ -39,16 +43,21 @@ def parse_playlists(playlists_to_parse):
 
 if __name__ == '__main__':
     playlists = get_playlists(sys.argv[1])
+    output_directory = sys.argv[2]
     parse_playlists(playlists)
 
     for parsed_playlist in playlists:
         for playlist_entry in parsed_playlist.playlist_entries:
             playlist_entry_soundfile = soundfile.SoundFile(playlist_entry.file)
-            if playlist_entry_soundfile.format in _ALLOWED_FORMATS:
-                if playlist_entry_soundfile.samplerate <= 48000:
-                    mediainfo = MediaInfoMetadata(
-                        filename=playlist_entry.file, cmd=r'C:\Program Files\ffmpeg\ffprobe.exe'
-                    )
-                    playlist_entry.metadata = PlaylistEntryMetadata(mediainfo)
+            mediainfo = MediaInfoMetadata(
+                filename=playlist_entry.file, cmd=r'C:\Program Files\ffmpeg\ffprobe.exe'
+            )
+            playlist_entry.metadata = PlaylistEntryMetadata(mediainfo)
+            if playlist_entry_soundfile.format not in _ALLOWED_FORMATS:
+                playlist_entry.add_conversion_type(ConversionType.WAV)
+            if playlist_entry_soundfile.samplerate > 48000:
+                playlist_entry.add_conversion_type(ConversionType.DOWNSAMPLE)
+            if playlist_entry_soundfile.subtype == 'PCM_24':
+                playlist_entry.add_conversion_type(ConversionType.BIT_24)
 
-                    print(playlist_entry.metadata.filename())
+            asyncio.run(Converter.convert(playlist_entry, output_directory))

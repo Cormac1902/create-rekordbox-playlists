@@ -5,6 +5,10 @@ import subprocess
 from MediaInfo import MediaInfo
 
 
+def get_tag(tags, tag):
+    return tags.get(tag) or tags.get(tag.upper())
+
+
 class MediaInfoMetadata(MediaInfo):
     metadata = dict()
 
@@ -25,11 +29,11 @@ class MediaInfoMetadata(MediaInfo):
 
         tags = info_dict.get('format').get('tags')
 
-        self.metadata['album_artist'] = tags.get('album_artist')
-        self.metadata['album'] = tags.get('album')
-        self.metadata['track'] = tags.get('track')
-        self.metadata['disc'] = tags.get('disc')
-        self.metadata['title'] = tags.get('title')
+        self.metadata['album_artist'] = get_tag(tags, 'album_artist')
+        self.metadata['album'] = get_tag(tags, 'album')
+        self.metadata['track'] = get_tag(tags, 'track')
+        self.metadata['disc'] = get_tag(tags, 'disc')
+        self.metadata['title'] = get_tag(tags, 'title')
 
     def _run_ffprobe(self) -> str:
         cmd = '"' + self.cmd + \
