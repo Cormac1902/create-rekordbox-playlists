@@ -24,5 +24,5 @@ class PlaylistEntry:
 
     def transcoded_file(self, output_directory) -> str:
         return os.path.join(output_directory,
-                            self.metadata.filename().replace('.', r'\.') +
+                            self.metadata.filename() +
                             ('.wav' if ConversionType.WAV in self.conversion_type else self.extension()))

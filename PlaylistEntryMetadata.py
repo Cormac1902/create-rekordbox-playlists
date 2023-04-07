@@ -1,5 +1,7 @@
 import os
 
+from pathvalidate import sanitize_filepath
+
 from MediaInfoMetadata import MediaInfoMetadata
 
 
@@ -19,5 +21,8 @@ class PlaylistEntryMetadata:
         self.title = metadata.get('title')
 
     def filename(self) -> str:
-        return os.sep.join([self.album_artist, self.album,
-                            ' '.join(['-'.join([str(self.disc), f"{self.track:02d}"]), self.title])])
+        return sanitize_filepath(
+            os.sep.join([self.album_artist, self.album,
+                         ' '.join(['-'.join([str(self.disc), f"{self.track:02d}"]), self.title])]),
+            replacement_text=' ',
+            platform='auto')
