@@ -9,7 +9,6 @@ import PlaylistEntry
 
 async def _run_ffmpeg(ffmpeg: FFmpeg, output_location):
     Path(os.path.split(output_location)[0]).mkdir(parents=True, exist_ok=True)
-    # TODO: Filenames with " in the name
     await ffmpeg.execute()
 
 
