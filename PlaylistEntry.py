@@ -29,3 +29,12 @@ class PlaylistEntry:
 
     def file_location(self, output_directory) -> str:
         return self.file if self.conversion_type == ConversionType.NONE else self.transcoded_file(output_directory)
+
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        return self.file == other.file
+
+    def __hash__(self):
+        h = hash(self.file)
+        return hash(self.file)

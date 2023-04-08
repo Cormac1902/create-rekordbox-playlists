@@ -48,20 +48,26 @@ if __name__ == '__main__':
     playlists_output_directory = sys.argv[3]
     parse_playlists(playlists)
 
+    processed_files = set()
+
     for parsed_playlist in playlists:
         for playlist_entry in parsed_playlist.playlist_entries:
-            playlist_entry_soundfile = soundfile.SoundFile(playlist_entry.file)
-            mediainfo = MediaInfoMetadata(
-                filename=playlist_entry.file, cmd=r'C:\Program Files\ffmpeg\ffprobe.exe'
-            )
-            playlist_entry.metadata = PlaylistEntryMetadata(mediainfo)
-            if playlist_entry_soundfile.format not in _ALLOWED_FORMATS:
-                playlist_entry.add_conversion_type(ConversionType.WAV)
-            if playlist_entry_soundfile.samplerate > 48000:
-                playlist_entry.add_conversion_type(ConversionType.DOWNSAMPLE)
-            if playlist_entry_soundfile.subtype == 'PCM_24':
-                playlist_entry.add_conversion_type(ConversionType.BIT_24)
+            if playlist_entry in processed_files:
+                print(f"Already processed: {playlist_entry.file}")
+            else:
+                processed_files.add(playlist_entry)
+                playlist_entry_soundfile = soundfile.SoundFile(playlist_entry.file)
+                mediainfo = MediaInfoMetadata(
+                    filename=playlist_entry.file, cmd=r'C:\Program Files\ffmpeg\ffprobe.exe'
+                )
+                playlist_entry.metadata = PlaylistEntryMetadata(mediainfo)
+                if playlist_entry_soundfile.format not in _ALLOWED_FORMATS:
+                    playlist_entry.add_conversion_type(ConversionType.WAV)
+                if playlist_entry_soundfile.samplerate > 48000:
+                    playlist_entry.add_conversion_type(ConversionType.DOWNSAMPLE)
+                if playlist_entry_soundfile.subtype == 'PCM_24':
+                    playlist_entry.add_conversion_type(ConversionType.BIT_24)
 
-            asyncio.run(Converter.convert(playlist_entry, transcodes_output_directory))
+                asyncio.run(Converter.convert(playlist_entry, transcodes_output_directory))
 
         parsed_playlist.write_playlist(playlists_output_directory, transcodes_output_directory)
