@@ -26,3 +26,6 @@ class PlaylistEntry:
         return os.path.join(output_directory,
                             self.metadata.filename() +
                             ('.wav' if ConversionType.WAV in self.conversion_type else self.extension()))
+
+    def file_location(self, output_directory) -> str:
+        return self.file if self.conversion_type == ConversionType.NONE else self.transcoded_file(output_directory)

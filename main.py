@@ -43,7 +43,9 @@ def parse_playlists(playlists_to_parse):
 
 if __name__ == '__main__':
     playlists = get_playlists(sys.argv[1])
-    output_directory = sys.argv[2]
+
+    transcodes_output_directory = sys.argv[2]
+    playlists_output_directory = sys.argv[3]
     parse_playlists(playlists)
 
     for parsed_playlist in playlists:
@@ -60,4 +62,6 @@ if __name__ == '__main__':
             if playlist_entry_soundfile.subtype == 'PCM_24':
                 playlist_entry.add_conversion_type(ConversionType.BIT_24)
 
-            asyncio.run(Converter.convert(playlist_entry, output_directory))
+            asyncio.run(Converter.convert(playlist_entry, transcodes_output_directory))
+
+        parsed_playlist.write_playlist(playlists_output_directory, transcodes_output_directory)
