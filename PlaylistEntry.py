@@ -1,6 +1,9 @@
 import os
 
+import soundfile
+
 from ConversionTypeEnum import ConversionType
+from MediaInfoMetadata import MediaInfoMetadata
 from PlaylistEntryMetadata import PlaylistEntryMetadata
 
 
@@ -30,11 +33,25 @@ class PlaylistEntry:
     def file_location(self, output_directory) -> str:
         return self.file if self.conversion_type == ConversionType.NONE else self.transcoded_file(output_directory)
 
+    def determine_conversion_type(self, allowed_formats):
+        print(f"Determining conversion type for: {self.file}", flush=True)
+        playlist_entry_soundfile = soundfile.SoundFile(self.file)
+        mediainfo = MediaInfoMetadata(
+            filename=self.file, cmd=r'C:\Program Files\ffmpeg\ffprobe.exe'
+        )
+        self.metadata = PlaylistEntryMetadata(mediainfo)
+        if self.metadata.raw_metadata is not None:
+            if playlist_entry_soundfile.format not in allowed_formats:
+                self.add_conversion_type(ConversionType.WAV)
+            if playlist_entry_soundfile.samplerate > 48000:
+                self.add_conversion_type(ConversionType.DOWNSAMPLE)
+            if playlist_entry_soundfile.subtype == 'PCM_24':
+                self.add_conversion_type(ConversionType.BIT_24)
+
     def __eq__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented
         return self.file == other.file
 
     def __hash__(self):
-        h = hash(self.file)
         return hash(self.file)

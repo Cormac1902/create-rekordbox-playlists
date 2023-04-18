@@ -18,8 +18,8 @@ class PlaylistEntryMetadata:
         self.raw_metadata = media_info.get_metadata()
         self.album_artist = self.raw_metadata.get('album_artist')
         self.album = self.raw_metadata.get('album')
-        self.track = int(self.raw_metadata.get('track').rsplit('/')[0])
-        self.disc = int(self.raw_metadata.get('disc').rsplit('/')[0])
+        self.track = self._strip_total('track')
+        self.disc = self._strip_total('disc')
         self.title = self.raw_metadata.get('title')
 
     def filename(self) -> str:
@@ -30,3 +30,10 @@ class PlaylistEntryMetadata:
             filepath if sys.platform != 'win32' else filepath.replace(':', ' '),
             replacement_text=' ',
             platform='auto')
+
+    def _strip_total(self, key) -> int:
+        number = self.raw_metadata.get(key)
+        if number is not None:
+            return int(number.rsplit('/')[0])
+
+        return 0

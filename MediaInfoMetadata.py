@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import sys
 
 from MediaInfo import MediaInfo
 
@@ -24,11 +25,24 @@ def get_tag(tags, tag):
     return tags.get(tag) or tags.get(tag.upper())
 
 
+def _try_run(cmd) -> str:
+    try:
+        output_bytes = subprocess.check_output(cmd, shell=True)
+    except subprocess.CalledProcessError:
+        return ''
+
+    return output_bytes.decode('utf-8')
+
+
 class MediaInfoMetadata(MediaInfo):
     metadata = dict()
 
-    def get(self, key):
-        return self.metadata.get(key)
+    def get(self, key) -> str:
+        if key in self.metadata:
+            return self.metadata.get(key)
+
+        print(f"{self.filename}'s metadata does not contain the {key} tag", file=sys.stderr, flush=True)
+        return ''
 
     def get_metadata(self):
         if not os.path.exists(self.filename) or not os.path.exists(self.cmd):
@@ -47,18 +61,14 @@ class MediaInfoMetadata(MediaInfo):
 
         tags = info_dict.get('format').get('tags')
 
+        if tags is None:
+            print(f"Failed to load metadata for: {self.filename}", file=sys.stderr, flush=True)
+            return
+
         for tag in TAGS_TO_LOAD:
             self.metadata[tag] = get_tag(tags, tag)
 
     def _run_ffprobe(self) -> str:
-        cmd = '"' + self.cmd + \
-              '" -loglevel quiet -print_format json -show_format -show_error -i "' + \
-              self.filename + \
-              '"'
-
-        try:
-            output_bytes = subprocess.check_output(cmd, shell=True)
-        except subprocess.CalledProcessError:
-            return ''
-
-        return output_bytes.decode('utf-8')
+        return _try_run(
+            f'"{self.cmd}" -loglevel quiet -print_format json -show_format -show_error -i "{self.filename}"'
+        )
