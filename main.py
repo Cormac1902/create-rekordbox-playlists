@@ -72,7 +72,7 @@ def write_playlist(playlist_to_write: PlaylistWriter):
     playlist_to_write.write_playlist()
 
 
-def write_playlists(playlists_to_write: set[Playlist], processed_playlist_entries: list[PlaylistEntry], config: Config):
+def write_playlists(playlists_to_write: set[Playlist], processed_playlist_entries: dict[PlaylistEntry], config: Config):
     with multiprocessing.Pool(config.max_parallel_tasks) as pool:
         pool.map(write_playlist,
                  [PlaylistWriter(playlist_to_write,
@@ -117,7 +117,7 @@ if __name__ == '__main__':
 
     processed_files = determine_conversion_types(playlists, config_argv)
 
-    write_playlists(playlists, processed_files, config_argv)
+    write_playlists(playlists, dict(zip(processed_files, processed_files)), config_argv)
 
     asyncio.run(
         convert_files(
