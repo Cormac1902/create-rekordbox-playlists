@@ -22,6 +22,9 @@ class PlaylistEntry:
         else:
             self.conversion_type = self.conversion_type | conversion_type
 
+    def processed(self) -> bool:
+        return self.metadata.media_info_metadata.contains_metadata()
+
     def extension(self) -> str:
         return os.path.splitext(self.file)[1]
 
@@ -40,7 +43,7 @@ class PlaylistEntry:
             filename=self.file, cmd=r'C:\Program Files\ffmpeg\ffprobe.exe'
         )
         self.metadata = PlaylistEntryMetadata(mediainfo)
-        if self.metadata.raw_metadata is not None:
+        if self.processed():
             if playlist_entry_soundfile.format not in allowed_formats:
                 self.add_conversion_type(ConversionType.WAV)
             if playlist_entry_soundfile.samplerate > 48000:

@@ -25,5 +25,7 @@ class Tagger:
             print(f"Updating tags: {output_location}", flush=True)
             with taglib.File(output_location, save_on_exit=True) as file:
                 for tag in TAGS_TO_LOAD:
-                    _copy_tag(file, tag, self.playlist_entry.metadata.raw_metadata,
+                    _copy_tag(file,
+                              tag,
+                              self.playlist_entry.metadata.media_info_metadata,
                               tag not in ['artist', 'genre', 'producer'])
