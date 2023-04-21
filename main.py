@@ -8,6 +8,7 @@ from datetime import timedelta
 
 from Config import Config
 from Converter import Converter
+from EnhancedMultichannelAudioFixer import EnhancedMultichannelAudioFixer
 from Playlist import Playlist
 from PlaylistEntry import PlaylistEntry
 from PlaylistWriter import PlaylistWriter
@@ -49,6 +50,10 @@ def determine_conversion_type(playlist_entry: PlaylistEntry):
 
 def tag(tagger: Tagger):
     tagger.tag()
+
+
+def fix_enhanced_multichannel_audio_for_file(enhanced_multichannel_audio_fixer: EnhancedMultichannelAudioFixer):
+    enhanced_multichannel_audio_fixer.fix()
 
 
 def determine_conversion_types(parsed_playlists: set[Playlist], config: Config) -> list[PlaylistEntry]:
@@ -99,6 +104,15 @@ def update_tags(playlist_entries: list[PlaylistEntry], config: Config):
         )
 
 
+def fix_enhanced_multichannel_audio(playlist_entries: list[PlaylistEntry], config: Config):
+    with multiprocessing.Pool(config.max_parallel_tasks) as pool:
+        pool.map(
+            fix_enhanced_multichannel_audio_for_file,
+            [EnhancedMultichannelAudioFixer(playlist_entry, config.transcodes_output_directory)
+             for playlist_entry in playlist_entries]
+        )
+
+
 if __name__ == '__main__':
     started_at = time.time()
 
@@ -126,6 +140,7 @@ if __name__ == '__main__':
     )
 
     update_tags(processed_files, config_argv)
+    fix_enhanced_multichannel_audio(processed_files, config_argv)
 
     finished_at = time.time()
     elapsed_time = finished_at - started_at
