@@ -24,6 +24,7 @@ class Tagger:
             output_location = self.playlist_entry.file_location(self.transcodes_output_directory)
             print(f"Updating tags: {output_location}", flush=True)
             with taglib.File(output_location, save_on_exit=True) as file:
+                file.tags = dict()
                 for tag in TAGS_TO_LOAD:
                     _copy_tag(file,
                               tag,
