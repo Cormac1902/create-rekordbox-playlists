@@ -5,6 +5,7 @@ import re
 import sys
 import time
 from datetime import timedelta
+from typing import Optional
 
 from Config import Config
 from Converter import Converter
@@ -17,15 +18,26 @@ from Tagger import Tagger
 _ALLOWED_FORMATS = {'MP3', 'WAV', 'ALAC', 'AIFF'}
 
 
-def get_playlists(directory) -> set[Playlist]:
-    directory_playlists = set()
-    assert os.path.isdir(directory)
-    for path, directories, files in os.walk(directory):
-        for file in files:
-            filepath = path + os.sep + file
+def get_playlist(directory, file) -> Optional[Playlist]:
+    filepath = directory + os.sep + file
 
-            if filepath.endswith('.pls'):
-                directory_playlists.add(Playlist(file.removesuffix('.pls'), filepath))
+    return Playlist(file.removesuffix('.pls'), filepath) if filepath.endswith('.pls') else None
+
+
+def get_playlists(playlists_path) -> set[Playlist]:
+    directory_playlists = set()
+
+    def add_to_playlists(playlist_path, playlist_file):
+        playlist = get_playlist(playlist_path, playlist_file)
+        if playlist is not None:
+            directory_playlists.add(playlist)
+
+    if os.path.isdir(playlists_path):
+        for path, directories, files in os.walk(playlists_path):
+            for file in files:
+                add_to_playlists(path, file)
+    elif os.path.isfile(playlists_path):
+        add_to_playlists(os.path.dirname(playlists_path), os.path.basename(playlists_path))
 
     return directory_playlists
 
