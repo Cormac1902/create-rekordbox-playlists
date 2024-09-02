@@ -1,5 +1,5 @@
-from ConversionTypeEnum import ConversionType
-from PlaylistEntry import PlaylistEntry
+from playlist_creator.audio_file_converter import ConversionType
+from playlist_creator.playlist_parser.PlaylistEntry import PlaylistEntry
 
 
 class EnhancedMultichannelAudioFixer:

@@ -1,12 +1,10 @@
-import os
+from ffmpeg.asyncio import FFmpeg
 from pathlib import Path
+from playlist_creator.audio_file_converter import ConversionType
+from playlist_creator.playlist_parser.PlaylistEntry import PlaylistEntry
 
 import asyncio
-
-from ffmpeg.asyncio import FFmpeg
-
-from ConversionTypeEnum import ConversionType
-from PlaylistEntry import PlaylistEntry
+import os
 
 
 async def _run_ffmpeg(ffmpeg: FFmpeg, output_location):

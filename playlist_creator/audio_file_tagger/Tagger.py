@@ -1,8 +1,7 @@
-import taglib
+from playlist_creator.audio_file_converter import ConversionType
+from playlist_creator.playlist_parser import MediaInfoMetadata, PlaylistEntry, TAGS_TO_LOAD
 
-from ConversionTypeEnum import ConversionType
-from MediaInfoMetadata import MediaInfoMetadata, TAGS_TO_LOAD
-from PlaylistEntry import PlaylistEntry
+import taglib
 
 
 def _copy_tag(file: taglib.File, tag: str, metadata: MediaInfoMetadata, make_list=True):
