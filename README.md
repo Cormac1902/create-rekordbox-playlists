@@ -26,7 +26,6 @@ Cormac Geraghty
 
 ## Roadmap
 
-1. Create project folder structure and modules
 1. Add unit tests
 1. Refactor to use Strategy and Flyweight patterns for conversion algorithms
 1. Add support for Ogg files

@@ -1,7 +1,6 @@
 import os
 
-from Playlist import Playlist
-from PlaylistEntry import PlaylistEntry
+from playlist_creator.playlist_parser import Playlist, PlaylistEntry
 
 
 class PlaylistWriter:

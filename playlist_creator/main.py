@@ -1,30 +1,30 @@
 import asyncio
+import audio_file_converter
+import audio_file_tagger
+import enhanced_multichannel_audio_fixer
 import multiprocessing
 import os
+import playlist_parser
+import playlist_writer
 import re
 import sys
 import time
+
 from datetime import timedelta
 from typing import Optional
 
 from Config import Config
-from Converter import Converter
-from EnhancedMultichannelAudioFixer import EnhancedMultichannelAudioFixer
-from Playlist import Playlist
-from PlaylistEntry import PlaylistEntry
-from PlaylistWriter import PlaylistWriter
-from Tagger import Tagger
 
 _ALLOWED_FORMATS = {'MP3', 'WAV', 'ALAC', 'AIFF'}
 
 
-def get_playlist(directory, file) -> Optional[Playlist]:
+def get_playlist(directory, file) -> Optional[playlist_parser.Playlist]:
     filepath = directory + os.sep + file
 
-    return Playlist(file.removesuffix('.pls'), filepath) if filepath.endswith('.pls') else None
+    return playlist_parser.Playlist(file.removesuffix('.pls'), filepath) if filepath.endswith('.pls') else None
 
 
-def get_playlists(playlists_path) -> set[Playlist]:
+def get_playlists(playlists_path) -> set[playlist_parser.Playlist]:
     directory_playlists = set()
 
     def add_to_playlists(playlist_path, playlist_file):
@@ -51,24 +51,26 @@ def parse_playlists(playlists_to_parse):
                 file = re.compile(r'File\d+=(.*)').match(playlist_file_lines[i]).group(1)
                 title = re.compile(r'Title\d+=(.*)').match(playlist_file_lines[i + 1]).group(1)
                 length = re.compile(r'Length\d+=(.*)').match(playlist_file_lines[i + 2]).group(1)
-                playlist_entry = PlaylistEntry(file, title, length)
+                playlist_entry = playlist_parser.PlaylistEntry(file, title, length)
                 playlist.playlist_entries[playlist_entry] = playlist_entry
 
 
-def determine_conversion_type(playlist_entry: PlaylistEntry):
+def determine_conversion_type(playlist_entry: playlist_parser.PlaylistEntry):
     playlist_entry.determine_conversion_type(_ALLOWED_FORMATS)
     return playlist_entry
 
 
-def tag(tagger: Tagger):
+def tag(tagger: audio_file_tagger.Tagger):
     tagger.tag()
 
 
-def fix_enhanced_multichannel_audio_for_file(enhanced_multichannel_audio_fixer: EnhancedMultichannelAudioFixer):
-    enhanced_multichannel_audio_fixer.fix()
+def fix_enhanced_multichannel_audio_for_file(fixer: enhanced_multichannel_audio_fixer.EnhancedMultichannelAudioFixer):
+    fixer.fix()
 
 
-def determine_conversion_types(parsed_playlists: set[Playlist], config: Config) -> list[PlaylistEntry]:
+def determine_conversion_types(
+        parsed_playlists: set[playlist_parser.Playlist], config: Config
+) -> list[playlist_parser.PlaylistEntry]:
     processed_files_to_return = dict()
 
     for parsed_playlist in parsed_playlists:
@@ -85,22 +87,24 @@ def determine_conversion_types(parsed_playlists: set[Playlist], config: Config) 
         return pool.map(determine_conversion_type, processed_files_to_return)
 
 
-def write_playlist(playlist_to_write: PlaylistWriter):
+def write_playlist(playlist_to_write: playlist_writer.PlaylistWriter):
     playlist_to_write.write_playlist()
 
 
-def write_playlists(playlists_to_write: set[Playlist], processed_playlist_entries: dict[PlaylistEntry], config: Config):
+def write_playlists(playlists_to_write: set[playlist_parser.Playlist],
+                    processed_playlist_entries: dict[playlist_parser.PlaylistEntry], config: Config):
     with multiprocessing.Pool(config.max_parallel_tasks) as pool:
         pool.map(write_playlist,
-                 [PlaylistWriter(playlist_to_write,
-                                 config.playlists_output_directory,
-                                 config.transcodes_output_directory,
-                                 processed_playlist_entries)
+                 [playlist_writer.PlaylistWriter(playlist_to_write,
+                                                 config.playlists_output_directory,
+                                                 config.transcodes_output_directory,
+                                                 processed_playlist_entries)
                   for playlist_to_write in playlists_to_write]
                  )
 
 
-async def convert_files(playlist_entries: list[PlaylistEntry], converter: Converter):
+async def convert_files(playlist_entries: list[playlist_parser.PlaylistEntry],
+                        converter: audio_file_converter.Converter):
     ffmpeg_tasks = set()
 
     for playlist_entry in playlist_entries:
@@ -109,18 +113,20 @@ async def convert_files(playlist_entries: list[PlaylistEntry], converter: Conver
     await asyncio.gather(*ffmpeg_tasks)
 
 
-def update_tags(playlist_entries: list[PlaylistEntry], config: Config):
+def update_tags(playlist_entries: list[playlist_parser.PlaylistEntry], config: Config):
     with multiprocessing.Pool(config.max_parallel_tasks) as pool:
         pool.map(
-            tag, [Tagger(playlist_entry, config.transcodes_output_directory) for playlist_entry in playlist_entries]
+            tag, [audio_file_tagger.Tagger(playlist_entry, config.transcodes_output_directory) for playlist_entry in
+                  playlist_entries]
         )
 
 
-def fix_enhanced_multichannel_audio(playlist_entries: list[PlaylistEntry], config: Config):
+def fix_enhanced_multichannel_audio(playlist_entries: list[playlist_parser.PlaylistEntry], config: Config):
     with multiprocessing.Pool(config.max_parallel_tasks) as pool:
         pool.map(
             fix_enhanced_multichannel_audio_for_file,
-            [EnhancedMultichannelAudioFixer(playlist_entry, config.transcodes_output_directory)
+            [enhanced_multichannel_audio_fixer.EnhancedMultichannelAudioFixer(playlist_entry,
+                                                                              config.transcodes_output_directory)
              for playlist_entry in playlist_entries]
         )
 
@@ -147,7 +153,8 @@ if __name__ == '__main__':
 
     asyncio.run(
         convert_files(
-            processed_files, Converter(config_argv.max_parallel_tasks, config_argv.transcodes_output_directory)
+            processed_files,
+            audio_file_converter.Converter(config_argv.max_parallel_tasks, config_argv.transcodes_output_directory)
         )
     )
 

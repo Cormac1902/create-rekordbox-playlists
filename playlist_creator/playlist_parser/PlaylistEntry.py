@@ -1,10 +1,9 @@
+from .MediaInfoMetadata import MediaInfoMetadata
+from .PlaylistEntryMetadata import PlaylistEntryMetadata
+from playlist_creator.audio_file_converter import ConversionType
+
 import os
-
 import soundfile
-
-from ConversionTypeEnum import ConversionType
-from MediaInfoMetadata import MediaInfoMetadata
-from PlaylistEntryMetadata import PlaylistEntryMetadata
 
 
 class PlaylistEntry:

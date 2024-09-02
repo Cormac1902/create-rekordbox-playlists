@@ -1,9 +1,8 @@
-import os
-import sys
-
+from .MediaInfoMetadata import MediaInfoMetadata
 from pathvalidate import sanitize_filepath
 
-from MediaInfoMetadata import MediaInfoMetadata
+import os
+import sys
 
 
 class PlaylistEntryMetadata:
