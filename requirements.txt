@@ -1,4 +1,5 @@
 MediaInfo~=0.0.9
-pathvalidate~=2.5.0
+pathvalidate~=3.2.0
 python-ffmpeg~=2.0.0
 soundfile~=0.12.0
+pytaglib~=3.0.0
