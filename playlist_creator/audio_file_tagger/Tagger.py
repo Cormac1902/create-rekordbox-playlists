@@ -1,10 +1,10 @@
 from playlist_creator.audio_file_converter import ConversionType
-from playlist_creator.playlist_parser import MediaInfoMetadata, PlaylistEntry, TAGS_TO_LOAD
+from playlist_creator.playlist_parser import MediaInfoAdapter, PlaylistEntry, TAGS_TO_LOAD
 
 import taglib
 
 
-def _copy_tag(file: taglib.File, tag: str, metadata: MediaInfoMetadata, make_list=True):
+def _copy_tag(file: taglib.File, tag: str, metadata: MediaInfoAdapter, make_list=True):
     metadata_tag = metadata.get(tag)
     if metadata_tag:
         file.tags[tag] = [metadata_tag] if make_list else metadata_tag.split(';')
@@ -27,5 +27,5 @@ class Tagger:
                 for tag in TAGS_TO_LOAD:
                     _copy_tag(file,
                               tag,
-                              self.playlist_entry.metadata.media_info_metadata,
+                              self.playlist_entry.get_metadata().media_info_metadata,
                               tag not in ['artist', 'genre', 'producer'])
