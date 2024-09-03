@@ -10,7 +10,7 @@ class PlaylistEntry:
     metadata: PlaylistEntryMetadata
     conversion_type: ConversionType = ConversionType.NONE
 
-    def __init__(self, file, title, length):
+    def __init__(self, file= '', title = '', length = ''):
         self.file: str = file
         self.title: str = title
         self.length: str = length
