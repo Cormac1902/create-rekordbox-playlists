@@ -9,3 +9,11 @@ init-windows:
     py -m venv venv
     .\venv\Scripts\activate; \
     pip install -r requirements.txt
+
+test-unix:
+	source venv/bin/activate; \
+	python3 -m unittest discover tests
+
+test-windows:
+	.\venv\Scripts\activate; \
+	py -m unittest discover tests
