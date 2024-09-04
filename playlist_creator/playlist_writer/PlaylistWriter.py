@@ -25,7 +25,7 @@ class PlaylistWriter:
 
             for playlist_entry in self.playlist.playlist_entries:
                 processed_playlist_entry = self.processed_playlist_entries[playlist_entry]
-                if processed_playlist_entry.processed():
+                if processed_playlist_entry.metadata_successfully_loaded:
                     file.write(f"File{i}={processed_playlist_entry.file_location(self.transcodes_output_directory)}\n")
                     file.write(f"Title{i}={processed_playlist_entry.title}\n")
                     file.write(f"Length{i}={processed_playlist_entry.length}\n")

@@ -57,7 +57,7 @@ def parse_playlists(playlists_to_parse):
 
 
 def determine_conversion_type(playlist_entry: playlist_parser.PlaylistEntry):
-    playlist_entry.determine_conversion_type(_ALLOWED_FORMATS, soundfile.SoundFile(playlist_entry.file))
+    playlist_entry.get_conversion_type(_ALLOWED_FORMATS)
     return playlist_entry
 
 
