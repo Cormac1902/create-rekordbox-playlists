@@ -1,7 +1,9 @@
 from playlist_creator import ConversionType, playlist_parser
+from _soundfile import ffi as _ffi
 from unittest.mock import MagicMock
 
 import os
+import soundfile
 import unittest
 
 
@@ -117,6 +119,50 @@ class TestPlaylistEntry(unittest.TestCase):
         test_playlist_entry.add_conversion_type(ConversionType.WAV)
 
         self.assertEqual(test_file, test_playlist_entry.file_location(''))
+
+    def test_when_soundfile_format_is_not_allowed_conversion_type_contains_wav(self):
+        test_playlist_entry = playlist_parser.PlaylistEntry()
+        test_playlist_entry.processed = MagicMock(return_value=True)
+        soundfile.SoundFile = MagicMock(return_value=soundfile.SoundFile)
+        test_soundfile = soundfile.SoundFile()
+        test_soundfile.format = 'flac'
+
+        test_playlist_entry.determine_conversion_type(['wav'], test_soundfile)
+
+        self.assertIn(ConversionType.WAV, test_playlist_entry.conversion_type)
+
+    def test_when_soundfile_format_is_allowed_conversion_type_is_none(self):
+        test_playlist_entry = playlist_parser.PlaylistEntry()
+        test_playlist_entry.processed = MagicMock(return_value=True)
+        soundfile.SoundFile = MagicMock(return_value=soundfile.SoundFile)
+        test_soundfile = soundfile.SoundFile()
+        test_soundfile.format = 'mp3'
+
+        test_playlist_entry.determine_conversion_type(['mp3'], test_soundfile)
+
+        self.assertEqual(ConversionType.NONE, test_playlist_entry.conversion_type)
+
+    def test_when_soundfile_samplerate_is_over_threshold_conversion_type_is_downsample(self):
+        test_playlist_entry = playlist_parser.PlaylistEntry()
+        test_playlist_entry.processed = MagicMock(return_value=True)
+        soundfile.SoundFile = MagicMock(return_value=soundfile.SoundFile)
+        test_soundfile = soundfile.SoundFile()
+        test_soundfile.samplerate = 48001
+
+        test_playlist_entry.determine_conversion_type(['wav'], test_soundfile)
+
+        self.assertIn(ConversionType.DOWNSAMPLE, test_playlist_entry.conversion_type)
+
+    def test_when_soundfile_subtype_is_PCM_24_conversion_type_is_BIT_24(self):
+        test_playlist_entry = playlist_parser.PlaylistEntry()
+        test_playlist_entry.processed = MagicMock(return_value=True)
+        soundfile.SoundFile = MagicMock(return_value=soundfile.SoundFile)
+        test_soundfile = soundfile.SoundFile()
+        test_soundfile.subtype = 'PCM_24'
+
+        test_playlist_entry.determine_conversion_type(['wav'], test_soundfile)
+
+        self.assertIn(ConversionType.BIT_24, test_playlist_entry.conversion_type)
 
 
 if __name__ == '__main__':

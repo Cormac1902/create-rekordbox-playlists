@@ -42,14 +42,13 @@ class PlaylistEntry:
     def file_location(self, output_directory: str) -> str:
         return self.file if ConversionType.NONE in self.conversion_type else self.transcoded_file(output_directory)
 
-    def determine_conversion_type(self, allowed_formats):
+    def determine_conversion_type(self, allowed_formats, playlist_entry_soundfile: soundfile.SoundFile):
         print(f"Determining conversion type for: {self.file}", flush=True)
-        playlist_entry_soundfile = soundfile.SoundFile(self.file)
 
         if self.processed():
             if playlist_entry_soundfile.format not in allowed_formats:
                 self.add_conversion_type(ConversionType.WAV)
-            if playlist_entry_soundfile.samplerate > 48000:
+            if isinstance(playlist_entry_soundfile.samplerate, int) and playlist_entry_soundfile.samplerate > 48000:
                 self.add_conversion_type(ConversionType.DOWNSAMPLE)
             if playlist_entry_soundfile.subtype == 'PCM_24':
                 self.add_conversion_type(ConversionType.BIT_24)

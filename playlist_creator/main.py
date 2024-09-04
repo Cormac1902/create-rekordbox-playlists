@@ -7,6 +7,7 @@ import os
 import playlist_parser
 import playlist_writer
 import re
+import soundfile
 import sys
 import time
 
@@ -56,7 +57,7 @@ def parse_playlists(playlists_to_parse):
 
 
 def determine_conversion_type(playlist_entry: playlist_parser.PlaylistEntry):
-    playlist_entry.determine_conversion_type(_ALLOWED_FORMATS)
+    playlist_entry.determine_conversion_type(_ALLOWED_FORMATS, soundfile.SoundFile(playlist_entry.file))
     return playlist_entry
 
 
