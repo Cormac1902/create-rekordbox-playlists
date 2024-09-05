@@ -18,7 +18,7 @@ class PlaylistEntry:
         self._load_conversion_type_attempted: bool = False
 
     @property
-    def conversion_type(self):
+    def conversion_type(self) -> ConversionType:
         return self._conversion_type
 
     @property
@@ -88,10 +88,10 @@ class PlaylistEntry:
         split_filename = os.path.splitext(self.file) if self.file else ''
         return split_filename[1] if len(split_filename) > 1 else ''
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if not isinstance(other, type(self)):
             return NotImplemented
         return self.file == other.file
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.file)
