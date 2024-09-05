@@ -9,7 +9,7 @@ class PlaylistEntry:
     __media_info_adapter: MediaInfoAdapter = None
     __soundfile: soundfile.SoundFile = None
 
-    def __init__(self, file='', title='', length=''):
+    def __init__(self, file=None, title=None, length=None):
         self.file: str = file
         self.title: str = title
         self.length: str = length
@@ -81,7 +81,7 @@ class PlaylistEntry:
         return self.__soundfile
 
     def _extension(self) -> str:
-        split_filename = os.path.splitext(self.file)
+        split_filename = os.path.splitext(self.file) if self.file else ''
         return split_filename[1] if len(split_filename) > 1 else ''
 
     def __eq__(self, other):
