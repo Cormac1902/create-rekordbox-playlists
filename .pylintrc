@@ -1,0 +1,6 @@
+[MAIN]
+disable=
+    C0111, # missing-docstring
+    invalid-name
+
+load-plugins=pylint.extensions.redefined_variable_type

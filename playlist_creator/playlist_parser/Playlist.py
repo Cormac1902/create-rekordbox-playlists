@@ -1,8 +1,10 @@
+from dataclasses import dataclass
+
 from .PlaylistEntry import PlaylistEntry
 
 
+@dataclass
 class Playlist:
-    def __init__(self, title = None, filepath = None):
-        self.title: str = title
-        self.filepath: str = filepath
-        self.playlist_entries: dict[PlaylistEntry] = dict[PlaylistEntry]()
+    title: str
+    filepath: str
+    playlist_entries: dict[PlaylistEntry]

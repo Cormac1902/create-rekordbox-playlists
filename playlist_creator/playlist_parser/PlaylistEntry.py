@@ -1,8 +1,9 @@
-from .MediaInfoAdapter import MediaInfoAdapter
-from playlist_creator.audio_file_converter import ConversionType
-
 import os
+
 import soundfile
+
+from playlist_creator.audio_file_converter import ConversionType
+from .MediaInfoAdapter import MediaInfoAdapter
 
 
 class PlaylistEntry:
@@ -31,7 +32,8 @@ class PlaylistEntry:
             self._conversion_type = self._conversion_type | conversion_type
 
     def file_location(self, output_directory: str) -> str:
-        return self.file if ConversionType.NONE in self._conversion_type else self.transcoded_file(output_directory)
+        return self.file if ConversionType.NONE in self._conversion_type \
+            else self.transcoded_file(output_directory)
 
     def get_conversion_type(self, allowed_formats) -> ConversionType:
         if not self._load_conversion_type_attempted:
@@ -45,7 +47,8 @@ class PlaylistEntry:
 
         return os.path.join(
             output_directory,
-            filename + ('.wav' if ConversionType.WAV in self._conversion_type else self._extension())
+            f"{filename}"
+            f"{".wav" if ConversionType.WAV in self._conversion_type else self._extension()}"
         ) if filename else ''
 
     def _determine_conversion_type(self, allowed_formats):
@@ -57,7 +60,8 @@ class PlaylistEntry:
 
             if playlist_entry_soundfile.format not in allowed_formats:
                 self.add_conversion_type(ConversionType.WAV)
-            if isinstance(playlist_entry_soundfile.samplerate, int) and playlist_entry_soundfile.samplerate > 48000:
+            if (isinstance(playlist_entry_soundfile.samplerate, int)
+                    and playlist_entry_soundfile.samplerate > 48000):
                 self.add_conversion_type(ConversionType.DOWNSAMPLE)
             if playlist_entry_soundfile.subtype == 'PCM_24':
                 self.add_conversion_type(ConversionType.BIT_24)

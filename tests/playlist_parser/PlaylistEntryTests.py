@@ -1,9 +1,10 @@
-from playlist_creator import ConversionType, playlist_parser
+import os
+import unittest
 from unittest.mock import MagicMock, PropertyMock
 
-import os
 import soundfile
-import unittest
+
+from playlist_creator import ConversionType, playlist_parser
 
 
 class TestPlaylistEntry(unittest.TestCase):
