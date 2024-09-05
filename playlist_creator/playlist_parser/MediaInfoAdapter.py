@@ -3,8 +3,8 @@ import os
 import subprocess
 import sys
 
-from pathvalidate import sanitize_filepath
 from MediaInfo import MediaInfo
+from pathvalidate import sanitize_filepath
 
 TAGS_TO_LOAD = [
     'title',
@@ -68,11 +68,11 @@ class MediaInfoAdapter(MediaInfo):
         disc_and_track_and_title = ' '.join(info for info in [disc_and_track, self.title] if info)
 
         filepath = os.sep.join(info for info in
-            [self.album_artist,
-             self.album,
-             disc_and_track_and_title
-             ] if info
-        )
+                               [self.album_artist,
+                                self.album,
+                                disc_and_track_and_title
+                                ] if info
+                               )
 
         return sanitize_filepath(
             filepath if sys.platform != 'win32' else filepath.replace(':', ' '),
@@ -86,7 +86,11 @@ class MediaInfoAdapter(MediaInfo):
             return metadata.get(key)
 
         if self.filename:
-            print(f"{self.filename}'s metadata does not contain the {key} tag", file=sys.stderr, flush=True)
+            print(
+                f"{self.filename}'s metadata does not contain the {key} tag",
+                file=sys.stderr,
+                flush=True
+            )
 
         return None
 
@@ -97,20 +101,25 @@ class MediaInfoAdapter(MediaInfo):
         return self._metadata
 
     def _load_metadata(self) -> dict:
-        if self._load_metadata_attempted or not os.path.exists(self.filename) or not os.path.exists(self.cmd):
-            return dict()
+        if (
+                self._load_metadata_attempted
+                or not os.path.exists(self.filename)
+                or not os.path.exists(self.cmd)
+        ):
+            return {}
 
         cmd_name = os.path.basename(self.cmd)
         self._load_metadata_attempted = True
 
-        if cmd_name == 'ffprobe' or 'ffprobe.exe':
-            return self._ffprobe_get_metadata()
+        return self._ffprobe_get_metadata() \
+            if cmd_name in {'ffprobe', 'ffprobe.exe'} \
+            else {}
 
     def _ffprobe_get_metadata(self) -> dict:
         ffprobe_output = self._run_ffprobe()
         info_dict = json.loads(ffprobe_output)
         tags = info_dict.get('format').get('tags')
-        metadata = dict()
+        metadata = {}
 
         if tags is None:
             print(f"Failed to load metadata for: {self.filename}", file=sys.stderr, flush=True)
@@ -122,7 +131,9 @@ class MediaInfoAdapter(MediaInfo):
 
     def _run_ffprobe(self) -> str:
         return self._try_run(
-            f'"{self.cmd}" -loglevel quiet -print_format json -show_format -show_error -i "{self.filename}"'
+            f'"{self.cmd}"'
+            f'-loglevel quiet -print_format json -show_format -show_error'
+            f'-i "{self.filename}"'
         )
 
     def _try_run(self, cmd) -> str:
