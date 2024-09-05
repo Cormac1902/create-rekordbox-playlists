@@ -14,7 +14,7 @@ class PlaylistEntry:
         self.file: str = file
         self.title: str = title
         self.length: str = length
-        self._conversion_type = ConversionType.NONE
+        self._conversion_type: ConversionType = ConversionType.NONE
         self._load_conversion_type_attempted: bool = False
 
     @property
