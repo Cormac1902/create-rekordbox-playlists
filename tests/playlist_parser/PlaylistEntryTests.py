@@ -2,11 +2,12 @@
 
 import os
 import unittest
+from lib2to3.btm_matcher import type_repr
 from unittest.mock import MagicMock, PropertyMock
 
 import soundfile
 
-from playlist_creator import ConversionType, playlist_parser
+from playlist_creator import configuration, ConversionType, playlist_parser
 
 
 class TestPlaylistEntry(unittest.TestCase):
@@ -59,7 +60,9 @@ class TestPlaylistEntry(unittest.TestCase):
 
     def test_when_conversion_type_is_none_file_location_returns_original_file(self):
         test_file = 'test'
-        test_playlist_entry = playlist_parser.PlaylistEntry(file=test_file)
+        test_playlist_entry = playlist_parser.PlaylistEntry(
+            playlist_entry_data=playlist_parser.PlaylistEntryData(test_file)
+        )
 
         self.assertEqual(test_file, test_playlist_entry.file_location(''))
 
@@ -76,11 +79,11 @@ class TestPlaylistEntry(unittest.TestCase):
         with unittest.mock.patch('playlist_creator.PlaylistEntry.metadata_successfully_loaded',
                                  new_callable=PropertyMock) as mock_metadata_successfully_loaded:
             mock_metadata_successfully_loaded.return_value = True
-            test_playlist_entry = playlist_parser.PlaylistEntry()
+            test_playlist_entry = playlist_parser.PlaylistEntry(
+                config=configuration.Config(allowed_formats={'wav'})
+            )
             soundfile.SoundFile = MagicMock(return_value=soundfile.SoundFile)
             soundfile.SoundFile().format = 'flac'
-
-            test_playlist_entry.get_conversion_type(['wav'])
 
             self.assertIn(ConversionType.WAV, test_playlist_entry.conversion_type)
 
@@ -88,11 +91,11 @@ class TestPlaylistEntry(unittest.TestCase):
         with unittest.mock.patch('playlist_creator.PlaylistEntry.metadata_successfully_loaded',
                                  new_callable=PropertyMock) as mock_metadata_successfully_loaded:
             mock_metadata_successfully_loaded.return_value = True
-            test_playlist_entry = playlist_parser.PlaylistEntry()
+            test_playlist_entry = playlist_parser.PlaylistEntry(
+                config=configuration.Config(allowed_formats={'mp3'})
+            )
             soundfile.SoundFile = MagicMock(return_value=soundfile.SoundFile)
             soundfile.SoundFile().format = 'mp3'
-
-            test_playlist_entry.get_conversion_type(['mp3'])
 
             self.assertEqual(ConversionType.NONE, test_playlist_entry.conversion_type)
 
@@ -100,11 +103,11 @@ class TestPlaylistEntry(unittest.TestCase):
         with unittest.mock.patch('playlist_creator.PlaylistEntry.metadata_successfully_loaded',
                                  new_callable=PropertyMock) as mock_metadata_successfully_loaded:
             mock_metadata_successfully_loaded.return_value = True
-            test_playlist_entry = playlist_parser.PlaylistEntry()
+            test_playlist_entry = playlist_parser.PlaylistEntry(
+                config=configuration.Config(allowed_formats={'wav'})
+            )
             soundfile.SoundFile = MagicMock(return_value=soundfile.SoundFile)
             soundfile.SoundFile().samplerate = 48001
-
-            test_playlist_entry.get_conversion_type(['wav'])
 
             self.assertIn(ConversionType.DOWNSAMPLE, test_playlist_entry.conversion_type)
 
@@ -112,11 +115,11 @@ class TestPlaylistEntry(unittest.TestCase):
         with unittest.mock.patch('playlist_creator.PlaylistEntry.metadata_successfully_loaded',
                                  new_callable=PropertyMock) as mock_metadata_successfully_loaded:
             mock_metadata_successfully_loaded.return_value = True
-            test_playlist_entry = playlist_parser.PlaylistEntry()
+            test_playlist_entry = playlist_parser.PlaylistEntry(
+                config=configuration.Config(allowed_formats={'wav'})
+            )
             soundfile.SoundFile = MagicMock(return_value=soundfile.SoundFile)
             soundfile.SoundFile().subtype = 'PCM_24'
-
-            test_playlist_entry.get_conversion_type(['wav'])
 
             self.assertIn(ConversionType.BIT_24, test_playlist_entry.conversion_type)
 
@@ -144,7 +147,9 @@ class TestPlaylistEntry(unittest.TestCase):
     def test_when_conversion_type_is_downsample_transcoded_file_returns_original_format(self):
         test_filename = 'test'
         test_file = f"{test_filename}.flac"
-        test_playlist_entry = playlist_parser.PlaylistEntry(file=test_file)
+        test_playlist_entry = playlist_parser.PlaylistEntry(
+            playlist_entry_data=playlist_parser.PlaylistEntryData(test_file)
+        )
         test_media_info_adapter = playlist_parser.MediaInfoAdapter()
         test_media_info_adapter.formatted_filename = MagicMock(return_value=test_filename)
         test_playlist_entry._media_info_adapter = test_media_info_adapter
@@ -155,7 +160,9 @@ class TestPlaylistEntry(unittest.TestCase):
 
     def test_when_conversion_type_is_wav_transcoded_file_returns_wav(self):
         test_filename = 'test'
-        test_playlist_entry = playlist_parser.PlaylistEntry(file=f"{test_filename}.flac")
+        test_playlist_entry = playlist_parser.PlaylistEntry(
+            playlist_entry_data=playlist_parser.PlaylistEntryData(f"{test_filename}.flac")
+        )
         test_media_info_adapter = playlist_parser.MediaInfoAdapter()
         test_media_info_adapter.formatted_filename = MagicMock(return_value=test_filename)
         test_playlist_entry._media_info_adapter = test_media_info_adapter

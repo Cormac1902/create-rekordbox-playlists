@@ -1,20 +1,18 @@
 import asyncio
-import audio_file_converter
-import audio_file_tagger
-import enhanced_multichannel_audio_fixer
 import multiprocessing
 import os
-import playlist_parser
-import playlist_writer
 import re
-import soundfile
 import sys
 import time
-
 from datetime import timedelta
 from typing import Optional
 
-from Config import Config
+import audio_file_converter
+import audio_file_tagger
+import configuration
+import enhanced_multichannel_audio_fixer
+import playlist_parser
+import playlist_writer
 
 _ALLOWED_FORMATS = {'MP3', 'WAV', 'ALAC', 'AIFF'}
 
@@ -43,7 +41,9 @@ def get_playlists(playlists_path) -> set[playlist_parser.Playlist]:
     return directory_playlists
 
 
-def parse_playlists(playlists_to_parse):
+def parse_playlists(
+        playlists_to_parse, _playlist_entry_factory: playlist_parser.PlaylistEntryFactory
+):
     for playlist in playlists_to_parse:
         with open(playlist.filepath, 'r', encoding='utf-8') as playlist_file:
             playlist_file_lines = playlist_file.readlines()
@@ -52,13 +52,10 @@ def parse_playlists(playlists_to_parse):
                 file = re.compile(r'File\d+=(.*)').match(playlist_file_lines[i]).group(1)
                 title = re.compile(r'Title\d+=(.*)').match(playlist_file_lines[i + 1]).group(1)
                 length = re.compile(r'Length\d+=(.*)').match(playlist_file_lines[i + 2]).group(1)
-                playlist_entry = playlist_parser.PlaylistEntry(file, title, length)
-                playlist.playlist_entries[playlist_entry] = playlist_entry
-
-
-def determine_conversion_type(playlist_entry: playlist_parser.PlaylistEntry):
-    playlist_entry.get_conversion_type(_ALLOWED_FORMATS)
-    return playlist_entry
+                playlist.playlist_entries.add(file)
+                _playlist_entry_factory.add_playlist_entry(
+                    playlist_parser.PlaylistEntryData(file, title, length)
+                )
 
 
 def tag(tagger: audio_file_tagger.Tagger):
@@ -69,42 +66,30 @@ def fix_enhanced_multichannel_audio_for_file(fixer: enhanced_multichannel_audio_
     fixer.fix()
 
 
-def determine_conversion_types(
-        parsed_playlists: set[playlist_parser.Playlist], config: Config
-) -> list[playlist_parser.PlaylistEntry]:
-    processed_files_to_return = dict()
-
-    for parsed_playlist in parsed_playlists:
-        print(f"Processing {parsed_playlist.title}")
-        for playlist_entry in parsed_playlist.playlist_entries:
-            if playlist_entry in processed_files_to_return:
-                print(f"Already processed: {playlist_entry.file}")
-            else:
-                processed_files_to_return[playlist_entry] = playlist_entry
-
-    print(f"Found {len(processed_files_to_return)} unique files")
-
-    with multiprocessing.Pool(config.max_parallel_tasks) as pool:
-        return pool.map(determine_conversion_type, processed_files_to_return)
-
-
-def write_playlist(playlist_to_write: playlist_writer.PlaylistWriter):
+def write_playlist(playlist_to_write: playlist_writer.PlaylistWriterContext):
     playlist_to_write.write_playlist()
 
 
 def write_playlists(playlists_to_write: set[playlist_parser.Playlist],
-                    processed_playlist_entries: dict[playlist_parser.PlaylistEntry], config: Config):
+                    _playlist_entry_factory: playlist_parser.PlaylistEntryFactory,
+                    config: configuration.Config):
+    playlist_writer_strategy_factory = playlist_writer.PlaylistWriterStrategyFactory()
+    playlist_writer_strategy = playlist_writer_strategy_factory.get_writer_strategy(playlist_writer.PlsWriterStrategy)
+
     with multiprocessing.Pool(config.max_parallel_tasks) as pool:
         pool.map(write_playlist,
-                 [playlist_writer.PlaylistWriter(playlist_to_write,
-                                                 config.playlists_output_directory,
-                                                 config.transcodes_output_directory,
-                                                 processed_playlist_entries)
-                  for playlist_to_write in playlists_to_write]
+                 [playlist_writer.PlaylistWriterContext(
+                     playlist_to_write,
+                     config.playlists_output_directory,
+                     config.transcodes_output_directory,
+                     playlist_writer_strategy,
+                     _playlist_entry_factory.playlist_entries
+                 )
+                     for playlist_to_write in playlists_to_write]
                  )
 
 
-async def convert_files(playlist_entries: list[playlist_parser.PlaylistEntry],
+async def convert_files(playlist_entries: set[playlist_parser.PlaylistEntry],
                         converter: audio_file_converter.Converter):
     ffmpeg_tasks = set()
 
@@ -114,7 +99,7 @@ async def convert_files(playlist_entries: list[playlist_parser.PlaylistEntry],
     await asyncio.gather(*ffmpeg_tasks)
 
 
-def update_tags(playlist_entries: list[playlist_parser.PlaylistEntry], config: Config):
+def update_tags(playlist_entries: set[playlist_parser.PlaylistEntry], config: configuration.Config):
     with multiprocessing.Pool(config.max_parallel_tasks) as pool:
         pool.map(
             tag, [audio_file_tagger.Tagger(playlist_entry, config.transcodes_output_directory) for playlist_entry in
@@ -122,7 +107,7 @@ def update_tags(playlist_entries: list[playlist_parser.PlaylistEntry], config: C
         )
 
 
-def fix_enhanced_multichannel_audio(playlist_entries: list[playlist_parser.PlaylistEntry], config: Config):
+def fix_enhanced_multichannel_audio(playlist_entries: set[playlist_parser.PlaylistEntry], config: configuration.Config):
     with multiprocessing.Pool(config.max_parallel_tasks) as pool:
         pool.map(
             fix_enhanced_multichannel_audio_for_file,
@@ -142,15 +127,17 @@ if __name__ == '__main__':
         if max_parallel_tasks_argv > 0:
             max_parallel_tasks = max_parallel_tasks_argv
 
-    config_argv = Config(sys.argv[1], sys.argv[2], sys.argv[3], max_parallel_tasks)
+    config_argv = configuration.Config(_ALLOWED_FORMATS, sys.argv[1], sys.argv[2], sys.argv[3], max_parallel_tasks)
 
     playlists = get_playlists(config_argv.playlists_directory)
 
-    parse_playlists(playlists)
+    playlist_entry_factory = playlist_parser.PlaylistEntryFactory(config_argv)
 
-    processed_files = determine_conversion_types(playlists, config_argv)
+    parse_playlists(playlists, playlist_entry_factory)
 
-    write_playlists(playlists, dict(zip(processed_files, processed_files)), config_argv)
+    write_playlists(playlists, playlist_entry_factory, config_argv)
+
+    processed_files = set(playlist_entry_factory.playlist_entries.values())
 
     asyncio.run(
         convert_files(
