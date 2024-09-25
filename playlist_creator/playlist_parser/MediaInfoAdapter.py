@@ -1,4 +1,6 @@
+import contextlib
 import json
+import multiprocessing.managers
 import os
 import subprocess
 import sys
@@ -27,19 +29,23 @@ def get_tag(tags, tag):
 
 
 class MediaInfoAdapter(MediaInfo):
-    _metadata: dict = None
-
-    def __init__(self, **kwargs):
+    def __init__(self, lock: multiprocessing.Lock = None, metadata=None, **kwargs):
         super().__init__(**kwargs)
-        self._load_metadata_attempted: bool = False
+
+        if metadata is None:
+            metadata = {}
+
+        self._load_metadata_attempted: bool = lock is None
+        self._metadata = metadata
+        self.__lock = lock
 
     @property
     def album(self) -> str:
-        return self._get('album')
+        return self.get('album')
 
     @property
     def album_artist(self) -> str:
-        return self._get('album_artist')
+        return self.get('album_artist')
 
     @property
     def disc(self) -> int | None:
@@ -47,11 +53,15 @@ class MediaInfoAdapter(MediaInfo):
 
     @property
     def title(self) -> str:
-        return self._get('title')
+        return self.get('title')
 
     @property
     def track(self) -> int | None:
         return self._strip_total('track')
+
+    @property
+    def _lock(self):
+        return self.__lock if self.__lock else contextlib.nullcontext()
 
     def contains_metadata(self) -> bool:
         return len(self._get_metadata()) > 0
@@ -79,7 +89,7 @@ class MediaInfoAdapter(MediaInfo):
             replacement_text=' ',
             platform='auto')
 
-    def _get(self, key) -> str | None:
+    def get(self, key) -> str | None:
         metadata = self._get_metadata()
 
         if key in metadata:
@@ -94,26 +104,26 @@ class MediaInfoAdapter(MediaInfo):
 
         return None
 
-    def _get_metadata(self) -> dict:
-        if not self._metadata:
-            self._metadata = self._load_metadata()
+    def _get_metadata(self) -> multiprocessing.managers.DictProxy:
+        if not self._load_metadata_attempted:
+            self._load_metadata()
 
         return self._metadata
 
-    def _load_metadata(self) -> dict:
-        if (
-                self._load_metadata_attempted
-                or not os.path.exists(self.filename)
-                or not os.path.exists(self.cmd)
-        ):
-            return {}
+    def _load_metadata(self):
+        with self._lock:
+            if (
+                    self._load_metadata_attempted
+                    or not os.path.exists(self.filename)
+                    # or not os.path.exists(self.cmd)
+            ):
+                pass
 
-        cmd_name = os.path.basename(self.cmd)
-        self._load_metadata_attempted = True
+            cmd_name = os.path.basename(self.cmd)
+            self._load_metadata_attempted = True
 
-        return self._ffprobe_get_metadata() \
-            if cmd_name in {'ffprobe', 'ffprobe.exe'} \
-            else {}
+            if cmd_name in {'ffprobe', 'ffprobe.exe'}:
+                self._metadata.update(self._ffprobe_get_metadata())
 
     def _ffprobe_get_metadata(self) -> dict:
         ffprobe_output = self._run_ffprobe()
@@ -132,8 +142,8 @@ class MediaInfoAdapter(MediaInfo):
     def _run_ffprobe(self) -> str:
         return self._try_run(
             f'"{self.cmd}"'
-            f'-loglevel quiet -print_format json -show_format -show_error'
-            f'-i "{self.filename}"'
+            f' -loglevel quiet -print_format json -show_format -show_error'
+            f' -i "{self.filename}"'
         )
 
     def _try_run(self, cmd) -> str:
@@ -146,7 +156,7 @@ class MediaInfoAdapter(MediaInfo):
         return output_bytes.decode('utf-8')
 
     def _strip_total(self, key) -> int | None:
-        number = self._get(key)
+        number = self.get(key)
         if number is not None:
             try:
                 return int(number.rsplit('/')[0])

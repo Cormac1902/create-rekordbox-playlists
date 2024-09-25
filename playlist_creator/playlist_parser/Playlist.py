@@ -1,10 +1,11 @@
 from dataclasses import dataclass, field
 
-from .PlaylistEntry import PlaylistEntry
 
-
-@dataclass
+@dataclass(frozen=True)
 class Playlist:
     title: str
     filepath: str
-    playlist_entries: dict[PlaylistEntry] = field(default_factory=dict)
+    playlist_entries: set[str] = field(default_factory=set)
+
+    def __hash__(self):
+        return hash(self.title)

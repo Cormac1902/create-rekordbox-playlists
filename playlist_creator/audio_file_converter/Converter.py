@@ -1,7 +1,6 @@
 from ffmpeg.asyncio import FFmpeg
 from pathlib import Path
-from playlist_creator.audio_file_converter import ConversionType
-from playlist_creator.playlist_parser.PlaylistEntry import PlaylistEntry
+from playlist_creator import audio_file_converter, playlist_parser
 
 import asyncio
 import os
@@ -12,7 +11,7 @@ async def _run_ffmpeg(ffmpeg: FFmpeg, output_location):
     await ffmpeg.execute()
 
 
-def _prepare_ffmpeg(playlist_entry: PlaylistEntry, output_location: str) -> [FFmpeg, str]:
+def _prepare_ffmpeg(playlist_entry: playlist_parser.PlaylistEntry, output_location: str) -> [FFmpeg, str]:
     ffmpeg = (
         FFmpeg()
         .option("y")
@@ -21,16 +20,16 @@ def _prepare_ffmpeg(playlist_entry: PlaylistEntry, output_location: str) -> [FFm
     message = ''
     conversion_type = playlist_entry.conversion_type
 
-    if ConversionType.WAV in conversion_type:
-        if ConversionType.BIT_24 in conversion_type:
-            if ConversionType.DOWNSAMPLE in conversion_type:
+    if audio_file_converter.ConversionType.WAV in conversion_type:
+        if audio_file_converter.ConversionType.BIT_24 in conversion_type:
+            if audio_file_converter.ConversionType.DOWNSAMPLE in conversion_type:
                 message = 'Converting to 24-bit 48kHz WAV'
                 ffmpeg = ffmpeg.output(output_location, {"codec:a": "pcm_s24le"}, ar=48000)
             else:
                 message = 'Converting to 24-bit WAV'
                 ffmpeg = ffmpeg.output(output_location, {"codec:a": "pcm_s24le"})
         else:
-            if ConversionType.DOWNSAMPLE in conversion_type:
+            if audio_file_converter.ConversionType.DOWNSAMPLE in conversion_type:
                 message = 'Converting to 48kHz WAV'
                 ffmpeg = ffmpeg.output(output_location, ar=48000)
             else:
@@ -51,8 +50,8 @@ class Converter:
         self.limit = asyncio.Semaphore(max_concurrent_tasks)
         self.transcodes_output_directory = transcodes_output_directory
 
-    async def convert_file(self, playlist_entry: PlaylistEntry):
-        if ConversionType.NONE in playlist_entry.conversion_type:
+    async def convert_file(self, playlist_entry: playlist_parser.PlaylistEntry):
+        if audio_file_converter.ConversionType.NONE in playlist_entry.conversion_type:
             print(f"No processing needed for: {playlist_entry.file}")
             return
 
