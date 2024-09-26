@@ -2,12 +2,11 @@
 
 import os
 import unittest
-from lib2to3.btm_matcher import type_repr
 from unittest.mock import MagicMock, PropertyMock
 
 import soundfile
 
-from playlist_creator import configuration, ConversionType, playlist_parser
+from playlist_creator import ConversionType, configuration, playlist_parser
 
 
 class TestPlaylistEntry(unittest.TestCase):
@@ -15,6 +14,28 @@ class TestPlaylistEntry(unittest.TestCase):
         test_playlist_entry = playlist_parser.PlaylistEntry()
 
         self.assertEqual(ConversionType.NONE, test_playlist_entry.conversion_type)
+
+    def test_lock_is_initialised(self):
+        test_manager = MagicMock()
+        test_lock = MagicMock()
+        test_manager.Lock = MagicMock(return_value=test_lock)
+        test_playlist_entry = playlist_parser.PlaylistEntry(test_manager)
+
+        self.assertEqual(test_playlist_entry._lock, test_lock)
+        test_manager.Lock.assert_called()
+
+    def test_media_info_adapter_is_initialised(self):
+        test_media_info_adapter = playlist_parser.MediaInfoAdapter()
+
+        with unittest.mock.patch(
+                'playlist_creator.playlist_parser.playlist_entry.PlaylistEntry.MediaInfoAdapter'
+        ) as mock_media_info_adapter:
+            test_manager = MagicMock()
+            mock_media_info_adapter.return_value = test_media_info_adapter
+            test_playlist_entry = playlist_parser.PlaylistEntry(test_manager)
+
+            mock_media_info_adapter.assert_called_once()
+            self.assertEqual(test_playlist_entry._media_info_adapter, test_media_info_adapter)
 
     def test_metadata_successfully_loaded_forwards_requests_to_media_info_adapter(self):
         test_playlist_entry = playlist_parser.PlaylistEntry()
@@ -26,6 +47,25 @@ class TestPlaylistEntry(unittest.TestCase):
 
         self.assertTrue(test_playlist_entry.metadata_successfully_loaded)
         test_media_info_adapter.contains_metadata.assert_called_once()
+
+    def test_file_returns_from_playlist_entry_data(self):
+        test_length = '100'
+        test_playlist_entry_data = playlist_parser.PlaylistEntryData(length=test_length)
+        test_playlist_entry = playlist_parser.PlaylistEntry(
+            playlist_entry_data=test_playlist_entry_data
+        )
+
+        self.assertEqual(test_playlist_entry.length, test_length)
+
+
+    def test_title_returns_from_playlist_entry_data(self):
+        test_title = 'Test Title'
+        test_playlist_entry_data = playlist_parser.PlaylistEntryData(title=test_title)
+        test_playlist_entry = playlist_parser.PlaylistEntry(
+            playlist_entry_data=test_playlist_entry_data
+        )
+
+        self.assertEqual(test_playlist_entry.title, test_title)
 
     def test_add_conversion_type_clears_none(self):
         test_playlist_entry = playlist_parser.PlaylistEntry()
@@ -123,6 +163,17 @@ class TestPlaylistEntry(unittest.TestCase):
 
             self.assertIn(ConversionType.BIT_24, test_playlist_entry.conversion_type)
 
+    def test_get_metadata_tag_forwards_requests_to_media_info_adapter(self):
+        test_playlist_entry = playlist_parser.PlaylistEntry()
+        test_media_info_adapter = playlist_parser.MediaInfoAdapter()
+        test_value = 'test'
+        test_media_info_adapter.get = MagicMock(return_value=test_value)
+
+        test_playlist_entry._media_info_adapter = test_media_info_adapter
+
+        self.assertEqual(test_playlist_entry.get_metadata_tag(''), test_value)
+        test_media_info_adapter.get.assert_called_once()
+
     def test_when_filename_is_none_transcoded_file_returns_empty_string(self):
         test_playlist_entry = playlist_parser.PlaylistEntry()
 
@@ -170,6 +221,16 @@ class TestPlaylistEntry(unittest.TestCase):
         test_playlist_entry.add_conversion_type(ConversionType.WAV)
 
         self.assertEqual(f"{test_filename}.wav", test_playlist_entry.transcoded_file(''))
+
+    def test_equals(self):
+        test_playlist_entry = playlist_parser.PlaylistEntry()
+
+        self.assertFalse(test_playlist_entry == {})
+
+    def test_hash(self):
+        test_playlist_entry = playlist_parser.PlaylistEntry()
+
+        self.assertEqual({test_playlist_entry}, {playlist_parser.PlaylistEntry()})
 
 
 if __name__ == '__main__':
