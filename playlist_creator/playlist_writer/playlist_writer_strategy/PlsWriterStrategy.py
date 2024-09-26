@@ -18,7 +18,7 @@ class PlsWriterStrategy(PlaylistWriterStrategy):
 
         with open(playlist_file, mode='w', encoding="utf-8") as file:
             file.write('[playlist]\n')
-            i = 0
+            i = 1
 
             for playlist_entry_file in playlist.playlist_entries:
                 playlist_entry = playlist_entries[playlist_entry_file]
@@ -29,7 +29,7 @@ class PlsWriterStrategy(PlaylistWriterStrategy):
                     file.write(f"Length{i}={playlist_entry.length}\n")
                     i = i + 1
 
-            file.write(f"NumberOfEntries={i}")
+            file.write(f"NumberOfEntries={i - 1}\n")
             file.write('Version=2')
 
     def __hash__(self):

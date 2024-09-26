@@ -76,7 +76,7 @@ class PlaylistEntry:
             self._conversion_type = self._conversion_type | conversion_type
 
     def file_location(self, output_directory: str) -> str:
-        return self.file if audio_file_converter.ConversionType.NONE in self._conversion_type \
+        return self.file if audio_file_converter.ConversionType.NONE in self.conversion_type \
             else self.transcoded_file(output_directory)
 
     def get_metadata_tag(self, key) -> str | None:
@@ -89,7 +89,7 @@ class PlaylistEntry:
             output_directory,
             f"{filename}"
             f"{".wav"
-            if audio_file_converter.ConversionType.WAV in self._conversion_type
+            if audio_file_converter.ConversionType.WAV in self.conversion_type
             else self._extension()
             }"
         ) if filename else ''
