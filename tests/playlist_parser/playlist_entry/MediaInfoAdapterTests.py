@@ -1,8 +1,9 @@
 import os
 import unittest
-from unittest.mock import PropertyMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 from playlist_creator import playlist_parser
+from playlist_creator.playlist_parser.playlist_entry.MediaInfoAdapter import get_tag
 
 
 # noinspection PyUnusedLocal
@@ -10,6 +11,13 @@ class TestMediaInfoAdapter(unittest.TestCase):
     test_title = 'test'
     test_album_artist = 'test_album_artist'
     test_album = 'test_album'
+
+    def test_get_tag(self):
+        test_tag = 'test_tag'
+        test_value = 'Test'
+        test_tags = { test_tag: test_value }
+
+        self.assertEqual(get_tag(test_tags, test_tag), test_value)
 
     #   pylint: disable=unused-argument
     @patch.object(
@@ -138,6 +146,15 @@ class TestMediaInfoAdapter(unittest.TestCase):
             test_media_info_adapter.formatted_filename()
         )
 #   pylint: enable=too-many-arguments
+    def test_get_returns_from_metadata(self):
+        test_media_info_adapter = playlist_parser.MediaInfoAdapter()
+        test_key = 'test_ley'
+        test_value = 'Test'
+        test_metadata = {test_key: test_value}
+        test_media_info_adapter._get_metadata = MagicMock(return_value=test_metadata)
+
+        self.assertEqual(test_media_info_adapter.get(test_key), test_value)
+
 
 
 #   pylint: enable=unused-argument

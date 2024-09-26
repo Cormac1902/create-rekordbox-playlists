@@ -1,2 +1,2 @@
-from .MediaInfoAdapterTests import *
-from .PlaylistEntryTests import *
+from .PlaylistTests import *
+from .playlist_entry import *

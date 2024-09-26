@@ -1,3 +1,4 @@
+import contextlib
 import multiprocessing
 import multiprocessing.managers
 
@@ -7,16 +8,20 @@ from .PlaylistEntryData import PlaylistEntryData
 
 
 class PlaylistEntryFactory:
-    def __init__(self, config: configuration.Config):
+    def __init__(self, config: configuration.Config = None):
         self._config = config
         self._manager = multiprocessing.Manager()
         self._playlist_entries: multiprocessing.managers.DictProxy[
             str, PlaylistEntry] = self._manager.dict()
-        self._lock = self._manager.Lock()
+        self.__lock = self._manager.Lock()
 
     @property
     def playlist_entries(self):
         return self._playlist_entries
+
+    @property
+    def _lock(self):
+        return self.__lock if self.__lock else contextlib.nullcontext()
 
     def add_playlist_entry(self, playlist_entry_data: PlaylistEntryData) -> PlaylistEntry:
         with self._lock:

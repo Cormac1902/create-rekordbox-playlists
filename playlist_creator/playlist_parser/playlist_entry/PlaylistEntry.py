@@ -5,7 +5,7 @@ import os
 import soundfile
 
 from playlist_creator import audio_file_converter, configuration
-from playlist_creator.playlist_parser import MediaInfoAdapter
+from .MediaInfoAdapter import MediaInfoAdapter
 from .PlaylistEntryData import PlaylistEntryData
 
 
@@ -45,7 +45,7 @@ class PlaylistEntry:
     @property
     def metadata_successfully_loaded(self) -> bool:
         return self._media_info_adapter.contains_metadata()
-    
+
     @property
     def file(self) -> str:
         return self._playlist_entry_data.file
@@ -95,7 +95,7 @@ class PlaylistEntry:
         ) if filename else ''
 
     def _determine_conversion_type(self):
-        if self.file:
+        if self.file:  # pragma: no cover
             print(f"Determining conversion type for: {self.file}", flush=True)
 
         if self.metadata_successfully_loaded:
@@ -129,4 +129,4 @@ class PlaylistEntry:
         return self._playlist_entry_data == other._playlist_entry_data
 
     def __hash__(self) -> int:
-        return hash(self.file)
+        return hash(self._playlist_entry_data)

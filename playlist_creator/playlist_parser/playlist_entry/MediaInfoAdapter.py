@@ -95,7 +95,7 @@ class MediaInfoAdapter(MediaInfo):
         if key in metadata:
             return metadata.get(key)
 
-        if self.filename:
+        if self.filename:  # pragma: no cover
             print(
                 f"{self.filename}'s metadata does not contain the {key} tag",
                 file=sys.stderr,
