@@ -22,11 +22,11 @@ class PlsWriterStrategy(PlaylistWriterStrategy):
 
             for playlist_entry_file in playlist.playlist_entries:
                 playlist_entry = playlist_entries[playlist_entry_file]
-                if playlist_entry.metadata_successfully_loaded:
+                if playlist_entry.metadata_successfully_loaded():
                     file.write(
                         f"File{i}={playlist_entry.file_location(transcodes_output_directory)}\n")
-                    file.write(f"Title{i}={playlist_entry.title}\n")
-                    file.write(f"Length{i}={playlist_entry.length}\n")
+                    file.write(f"Title{i}={playlist_entry.title()}\n")
+                    file.write(f"Length{i}={playlist_entry.length()}\n")
                     i = i + 1
 
             file.write(f"NumberOfEntries={i - 1}\n")

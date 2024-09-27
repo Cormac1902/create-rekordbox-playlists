@@ -117,7 +117,7 @@ class MediaInfoAdapter(MediaInfo):
                     or not os.path.exists(self.filename)
                     # or not os.path.exists(self.cmd)
             ):
-                pass
+                return
 
             cmd_name = os.path.basename(self.cmd)
             self._load_metadata_attempted = True

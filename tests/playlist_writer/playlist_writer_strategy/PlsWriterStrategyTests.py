@@ -23,38 +23,33 @@ class TestPlsWriterStrategy(unittest.TestCase):
             test_title, test_length, {test_title}
         )
         test_playlist_entry.file_location = MagicMock(return_value=test_filepath)
+        test_playlist_entry.metadata_successfully_loaded = MagicMock(return_value=True)
 
         with patch("builtins.open", unittest.mock.mock_open(read_data="data")) as mock_open:
-            with patch(
-                    'playlist_creator.PlaylistEntry.metadata_successfully_loaded',
-                    new_callable=PropertyMock
-            ) as mock_metadata_successfully_loaded:
-                mock_metadata_successfully_loaded.return_value = True
+            test_pls_writer_strategy.write_playlist(
+                test_playlist,
+                {test_title: test_playlist_entry},
+                test_filepath,
+                test_transcodes_output_directory
+            )
 
-                test_pls_writer_strategy.write_playlist(
-                    test_playlist,
-                    {test_title: test_playlist_entry},
-                    test_filepath,
-                    test_transcodes_output_directory
-                )
-
-                mock_open.assert_called_once_with(
-                    test_playlist_filename,
-                    mode='w',
-                    encoding='utf-8'
-                )
-                mock_open.return_value.write.assert_has_calls(
-                    [
-                        call('[playlist]\n'),
-                        call(
-                            f"File1={test_playlist_entry.file_location(test_transcodes_output_directory)}\n"
-                        ),
-                        call(f"Title1={test_playlist_entry.title}\n"),
-                        call(f"Length1={test_playlist_entry.length}\n"),
-                        call('NumberOfEntries=1\n'),
-                        call('Version=2')
-                    ],
-                )
+            mock_open.assert_called_once_with(
+                test_playlist_filename,
+                mode='w',
+                encoding='utf-8'
+            )
+            mock_open.return_value.write.assert_has_calls(
+                [
+                    call('[playlist]\n'),
+                    call(
+                        f"File1={test_playlist_entry.file_location(test_transcodes_output_directory)}\n"
+                    ),
+                    call(f"Title1={test_playlist_entry.title()}\n"),
+                    call(f"Length1={test_playlist_entry.length()}\n"),
+                    call('NumberOfEntries=1\n'),
+                    call('Version=2')
+                ],
+            )
 
     def test_hash(self):
         self.assertEqual(hash(playlist_writer.PlsWriterStrategy()), hash('pls'))

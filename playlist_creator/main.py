@@ -116,7 +116,6 @@ def fix_enhanced_multichannel_audio(playlist_entries: set[playlist_parser.Playli
              for playlist_entry in playlist_entries]
         )
 
-
 if __name__ == '__main__':
     started_at = time.time()
 
@@ -131,24 +130,25 @@ if __name__ == '__main__':
 
     playlists = get_playlists(config_argv.playlists_directory)
 
-    playlist_entry_factory = playlist_parser.PlaylistEntryFactory(config_argv)
+    with playlist_parser.PlaylistEntryManager() as manager:
+        playlist_entry_factory = playlist_parser.PlaylistEntryFactory(config_argv, manager)
 
-    parse_playlists(playlists, playlist_entry_factory)
+        parse_playlists(playlists, playlist_entry_factory)
 
-    write_playlists(playlists, playlist_entry_factory, config_argv)
+        write_playlists(playlists, playlist_entry_factory, config_argv)
 
-    processed_files = set(playlist_entry_factory.playlist_entries.values())
+        processed_files = set(playlist_entry_factory.playlist_entries.values())
 
-    asyncio.run(
-        convert_files(
-            processed_files,
-            audio_file_converter.Converter(config_argv.max_parallel_tasks, config_argv.transcodes_output_directory)
+        asyncio.run(
+            convert_files(
+                processed_files,
+                audio_file_converter.Converter(config_argv.max_parallel_tasks, config_argv.transcodes_output_directory)
+            )
         )
-    )
 
-    update_tags(processed_files, config_argv)
-    fix_enhanced_multichannel_audio(processed_files, config_argv)
+        update_tags(processed_files, config_argv)
+        fix_enhanced_multichannel_audio(processed_files, config_argv)
 
-    finished_at = time.time()
-    elapsed_time = finished_at - started_at
-    print(f"Done in {timedelta(seconds=elapsed_time)}")
+        finished_at = time.time()
+        elapsed_time = finished_at - started_at
+        print(f"Done in {timedelta(seconds=elapsed_time)}")
