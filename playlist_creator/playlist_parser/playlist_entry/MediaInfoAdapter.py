@@ -101,7 +101,7 @@ class MediaInfoAdapter(MediaInfo):
 
         return None
 
-    def _get_metadata(self) -> multiprocessing.managers.DictProxy:
+    def _get_metadata(self) -> dict:
         with self._lock:
             if not self._load_metadata_attempted:
                 self._load_metadata()
