@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import sys
 
 from .IMediaInfoStrategy import IMediaInfoStrategy, get_tag, try_run
@@ -44,6 +45,9 @@ class FfprobeStrategy(IMediaInfoStrategy):
         return metadata
 
     def _run_ffprobe(self, filename) -> str:
+        if not shutil.which(self._cmd):
+            return ''
+
         return try_run(
             f'"{self._cmd}"'
             f' -loglevel quiet -print_format json -show_format -show_error'
