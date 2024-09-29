@@ -29,14 +29,11 @@ def get_tag(tags, tag):
 
 
 class MediaInfoAdapter(MediaInfo):
-    def __init__(self, lock: multiprocessing.Lock = None, metadata=None, **kwargs):
+    def __init__(self, lock: multiprocessing.RLock = None, **kwargs):
         super().__init__(**kwargs)
 
-        if metadata is None:
-            metadata = {}
-
         self._load_metadata_attempted: bool = lock is None
-        self._metadata = metadata
+        self._metadata: dict = {}
         self.__lock = lock
 
     @property
@@ -105,8 +102,9 @@ class MediaInfoAdapter(MediaInfo):
         return None
 
     def _get_metadata(self) -> multiprocessing.managers.DictProxy:
-        if not self._load_metadata_attempted:
-            self._load_metadata()
+        with self._lock:
+            if not self._load_metadata_attempted:
+                self._load_metadata()
 
         return self._metadata
 
@@ -117,7 +115,7 @@ class MediaInfoAdapter(MediaInfo):
                     or not os.path.exists(self.filename)
                     # or not os.path.exists(self.cmd)
             ):
-                pass
+                return
 
             cmd_name = os.path.basename(self.cmd)
             self._load_metadata_attempted = True
