@@ -21,14 +21,17 @@ class PlsWriterStrategy(PlaylistWriterStrategy):
 
             for playlist_entry in playlist.playlist_entries:
                 if playlist_entry.metadata_successfully_loaded():
-                    file.write(
-                        f"File{i}={playlist_entry.file_location(transcodes_output_directory)}\n")
-                    file.write(f"Title{i}={playlist_entry.title()}\n")
-                    file.write(f"Length{i}={playlist_entry.length()}\n")
+                    file.writelines([
+                        f"File{i}={playlist_entry.file_location(transcodes_output_directory)}\n",
+                        f"Title{i}={playlist_entry.title()}\n",
+                        f"Length{i}={playlist_entry.length()}\n"
+                    ])
                     i = i + 1
 
-            file.write(f"NumberOfEntries={i - 1}\n")
-            file.write('Version=2')
+            file.writelines([
+                f"NumberOfEntries={i - 1}\n",
+                'Version=2'
+            ])
 
     def __hash__(self):
         return hash('pls')

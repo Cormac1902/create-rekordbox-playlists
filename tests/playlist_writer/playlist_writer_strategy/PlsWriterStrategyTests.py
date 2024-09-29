@@ -37,16 +37,18 @@ class TestPlsWriterStrategy(unittest.TestCase):
                 mode='w',
                 encoding='utf-8'
             )
-            mock_open.return_value.write.assert_has_calls(
+            mock_open.return_value.write.assert_has_calls([call('[playlist]\n')])
+            mock_open.return_value.writelines.assert_has_calls(
                 [
-                    call('[playlist]\n'),
-                    call(
-                        f"File1={test_playlist_entry.file_location(test_transcodes_output_directory)}\n"
-                    ),
-                    call(f"Title1={test_playlist_entry.title()}\n"),
-                    call(f"Length1={test_playlist_entry.length()}\n"),
-                    call('NumberOfEntries=1\n'),
-                    call('Version=2')
+                    call([
+                        f"File1={test_playlist_entry.file_location(test_transcodes_output_directory)}\n",
+                        f"Title1={test_playlist_entry.title()}\n",
+                        f"Length1={test_playlist_entry.length()}\n"
+                    ]),
+                    call([
+                        'NumberOfEntries=1\n',
+                        'Version=2'
+                    ])
                 ],
             )
 
