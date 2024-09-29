@@ -2,7 +2,7 @@
 
 import os
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch, PropertyMock
 
 import soundfile
 
@@ -12,6 +12,7 @@ from playlist_creator import ConversionType, configuration, playlist_parser
 class TestPlaylistEntry(unittest.TestCase):
     def test_conversion_type_is_initialised_to_none(self):
         test_playlist_entry = playlist_parser.PlaylistEntry()
+        test_playlist_entry._load_conversion_type_attempted = True
 
         self.assertEqual(ConversionType.NONE, test_playlist_entry.conversion_type())
 
@@ -21,29 +22,36 @@ class TestPlaylistEntry(unittest.TestCase):
 
         self.assertEqual(test_playlist_entry._lock, test_lock)
 
-    def test_media_info_adapter_is_initialised(self):
-        test_media_info_adapter = playlist_parser.MediaInfoAdapter()
+    def test_metadata_adapter_is_initialised(self):
+        test_metadata_adapter = playlist_parser.MetadataAdapter()
+        playlist_parser.metadata_adapter.MetadataAdapter = MagicMock(
+            return_value=test_metadata_adapter
+        )
+        test_media_info_strategy_factory = MagicMock()
+        test_media_info_strategy_factory.get_strategy = MagicMock(
+            return_value=test_metadata_adapter
+        )
+        test_playlist_entry = playlist_parser.PlaylistEntry(
+            media_info_strategy_factory=test_media_info_strategy_factory
+        )
+        test_playlist_entry.conversion_type = MagicMock(return_value=ConversionType.NONE)
 
-        with unittest.mock.patch(
-                'playlist_creator.playlist_parser.playlist_entry.PlaylistEntry.MediaInfoAdapter'
-        ) as mock_media_info_adapter:
-            test_manager = MagicMock()
-            mock_media_info_adapter.return_value = test_media_info_adapter
-            test_playlist_entry = playlist_parser.PlaylistEntry(test_manager)
+        self.assertEqual(test_playlist_entry._metadata_adapter, test_metadata_adapter)
+        playlist_parser.metadata_adapter.MetadataAdapter.assert_called_once()
 
-            mock_media_info_adapter.assert_called_once()
-            self.assertEqual(test_playlist_entry._media_info_adapter, test_media_info_adapter)
-
-    def test_metadata_successfully_loaded_forwards_requests_to_media_info_adapter(self):
+    @patch.object(
+        playlist_parser.metadata_adapter.MetadataAdapter,
+        'contains_metadata',
+        new_callable=PropertyMock(return_value=True)
+    )
+    def test_metadata_successfully_loaded_forwards_requests_to_metadata_adapter(self, contains_metadata):
         test_playlist_entry = playlist_parser.PlaylistEntry()
-        test_media_info_adapter = playlist_parser.MediaInfoAdapter()
-
-        test_media_info_adapter.contains_metadata = MagicMock(return_value=True)
-
-        test_playlist_entry._media_info_adapter = test_media_info_adapter
+        test_metadata_adapter = playlist_parser.MetadataAdapter()
+        playlist_parser.metadata_adapter.MetadataAdapter = MagicMock(
+            return_value=test_metadata_adapter
+        )
 
         self.assertTrue(test_playlist_entry.metadata_successfully_loaded())
-        test_media_info_adapter.contains_metadata.assert_called_once()
 
     def test_file_returns_from_playlist_entry_data(self):
         test_length = '100'
@@ -67,6 +75,7 @@ class TestPlaylistEntry(unittest.TestCase):
         test_playlist_entry = playlist_parser.PlaylistEntry()
 
         test_playlist_entry.add_conversion_type(ConversionType.WAV)
+        test_playlist_entry._load_conversion_type_attempted = True
 
         self.assertNotIn(ConversionType.NONE, test_playlist_entry.conversion_type())
 
@@ -75,6 +84,7 @@ class TestPlaylistEntry(unittest.TestCase):
 
         test_playlist_entry.add_conversion_type(ConversionType.WAV)
         test_playlist_entry.add_conversion_type(ConversionType.NONE)
+        test_playlist_entry._load_conversion_type_attempted = True
 
         self.assertEqual(ConversionType.NONE, test_playlist_entry.conversion_type())
 
@@ -82,6 +92,7 @@ class TestPlaylistEntry(unittest.TestCase):
         test_playlist_entry = playlist_parser.PlaylistEntry()
 
         test_playlist_entry.add_conversion_type(ConversionType.WAV)
+        test_playlist_entry._load_conversion_type_attempted = True
 
         self.assertIn(ConversionType.WAV, test_playlist_entry.conversion_type())
 
@@ -90,6 +101,7 @@ class TestPlaylistEntry(unittest.TestCase):
 
         test_playlist_entry.add_conversion_type(ConversionType.WAV)
         test_playlist_entry.add_conversion_type(ConversionType.BIT_24)
+        test_playlist_entry._load_conversion_type_attempted = True
 
         self.assertIn(ConversionType.WAV, test_playlist_entry.conversion_type())
         self.assertIn(ConversionType.BIT_24, test_playlist_entry.conversion_type())
@@ -99,8 +111,9 @@ class TestPlaylistEntry(unittest.TestCase):
         test_playlist_entry = playlist_parser.PlaylistEntry(
             playlist_entry_data=playlist_parser.PlaylistEntryData(test_file)
         )
+        test_playlist_entry._load_conversion_type_attempted = True
 
-        self.assertEqual(test_file, test_playlist_entry.file_location(''))
+        self.assertEqual(test_playlist_entry.file_location(''), test_file)
 
     def test_when_conversion_type_is_not_none_file_location_returns_transcoded_file(self):
         test_file = 'test'
@@ -159,30 +172,41 @@ class TestPlaylistEntry(unittest.TestCase):
 
             self.assertIn(ConversionType.BIT_24, test_playlist_entry.conversion_type())
 
-    def test_get_metadata_tag_forwards_requests_to_media_info_adapter(self):
+    def test_get_metadata_tag_forwards_requests_to_metadata_adapter(self):
+        test_metadata_adapter = playlist_parser.MetadataAdapter()
+        playlist_parser.metadata_adapter.MetadataAdapter = MagicMock(
+            return_value=test_metadata_adapter
+        )
         test_playlist_entry = playlist_parser.PlaylistEntry()
-        test_media_info_adapter = playlist_parser.MediaInfoAdapter()
+        test_key = 'test_key'
         test_value = 'test'
-        test_media_info_adapter.get = MagicMock(return_value=test_value)
+        test_dict = {test_key: test_value}
+        test_metadata_adapter.get = MagicMock(side_effect = test_dict.get)
 
-        test_playlist_entry._media_info_adapter = test_media_info_adapter
-
-        self.assertEqual(test_playlist_entry.get_metadata_tag(''), test_value)
-        test_media_info_adapter.get.assert_called_once()
+        self.assertEqual(test_value, test_playlist_entry.get_metadata_tag(test_key))
+        test_metadata_adapter.get.assert_called_once()
 
     def test_when_filename_is_none_transcoded_file_returns_empty_string(self):
-        test_playlist_entry = playlist_parser.PlaylistEntry()
+        test_playlist_entry = playlist_parser.PlaylistEntry(media_info_strategy_factory=MagicMock())
+        test_metadata_adapter = playlist_parser.MetadataAdapter()
+        playlist_parser.metadata_adapter.MetadataAdapter = MagicMock(
+            return_value=test_metadata_adapter
+        )
+        test_playlist_entry._load_conversion_type_attempted = True
 
         self.assertEqual('', test_playlist_entry.transcoded_file(r'C:\test'))
 
     def test_when_filename_has_value_then_transcoded_file_returns_correctly(self):
         test_playlist_entry = playlist_parser.PlaylistEntry()
-        test_media_info_adapter = playlist_parser.MediaInfoAdapter()
+        test_metadata_adapter = playlist_parser.MetadataAdapter()
 
         test_filename = 'test'
 
-        test_media_info_adapter.formatted_filename = MagicMock(return_value=test_filename)
-        test_playlist_entry._media_info_adapter = test_media_info_adapter
+        test_metadata_adapter.formatted_filename = MagicMock(return_value=test_filename)
+        playlist_parser.metadata_adapter.MetadataAdapter = MagicMock(
+            return_value=test_metadata_adapter
+        )
+        test_playlist_entry._load_conversion_type_attempted = True
 
         test_output_directory = r'C:\test'
 
@@ -207,11 +231,14 @@ class TestPlaylistEntry(unittest.TestCase):
         test_playlist_entry = playlist_parser.PlaylistEntry(
             playlist_entry_data=playlist_parser.PlaylistEntryData(test_file)
         )
-        test_media_info_adapter = playlist_parser.MediaInfoAdapter()
-        test_media_info_adapter.formatted_filename = MagicMock(return_value=test_filename)
-        test_playlist_entry._media_info_adapter = test_media_info_adapter
+        test_metadata_adapter = playlist_parser.MetadataAdapter()
+        test_metadata_adapter.formatted_filename = MagicMock(return_value=test_filename)
+        playlist_parser.metadata_adapter.MetadataAdapter = MagicMock(
+            return_value=test_metadata_adapter
+        )
 
         test_playlist_entry.add_conversion_type(ConversionType.DOWNSAMPLE)
+        test_playlist_entry._load_conversion_type_attempted = True
 
         self.assertEqual(test_file, test_playlist_entry.transcoded_file(''))
 
@@ -220,11 +247,14 @@ class TestPlaylistEntry(unittest.TestCase):
         test_playlist_entry = playlist_parser.PlaylistEntry(
             playlist_entry_data=playlist_parser.PlaylistEntryData(f"{test_filename}.flac")
         )
-        test_media_info_adapter = playlist_parser.MediaInfoAdapter()
-        test_media_info_adapter.formatted_filename = MagicMock(return_value=test_filename)
-        test_playlist_entry._media_info_adapter = test_media_info_adapter
+        test_metadata_adapter = playlist_parser.MetadataAdapter()
+        test_metadata_adapter.formatted_filename = MagicMock(return_value=test_filename)
+        playlist_parser.metadata_adapter.MetadataAdapter = MagicMock(
+            return_value=test_metadata_adapter
+        )
 
         test_playlist_entry.add_conversion_type(ConversionType.WAV)
+        test_playlist_entry._load_conversion_type_attempted = True
 
         self.assertEqual(f"{test_filename}.wav", test_playlist_entry.transcoded_file(''))
 

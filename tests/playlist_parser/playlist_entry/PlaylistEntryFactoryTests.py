@@ -21,7 +21,7 @@ class TestPlaylistEntryFactory(unittest.TestCase):
         self.assertEqual(test_playlist_entry_factory._manager, test_manager)
 
     def test_playlist_entries_is_initialised(self):
-        test_manager = multiprocessing.Manager()
+        test_manager = MagicMock()
         multiprocessing.Manager = MagicMock(return_value=test_manager)
         test_playlist_entries = {}
         test_manager.dict = MagicMock(return_value=test_playlist_entries)

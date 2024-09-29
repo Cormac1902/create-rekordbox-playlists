@@ -5,7 +5,7 @@ import os
 import soundfile
 
 from playlist_creator import audio_file_converter, configuration
-from .MediaInfoAdapter import MediaInfoAdapter
+from . import metadata_adapter
 from .PlaylistEntryData import PlaylistEntryData
 
 
@@ -13,15 +13,12 @@ class PlaylistEntry:
     def __init__(self,
                  lock: multiprocessing.RLock = None,
                  playlist_entry_data: PlaylistEntryData = PlaylistEntryData(),
-                 config: configuration.Config = configuration.Config()):
+                 config: configuration.Config = configuration.Config(),
+                 media_info_strategy_factory: metadata_adapter.MediaInfoStrategyFactory = None):
+        self._media_info_strategy_factory = media_info_strategy_factory
         self._playlist_entry_data = playlist_entry_data
         self.__lock = lock
-        self._media_info_adapter = MediaInfoAdapter(
-            self._lock,
-            filename=self.file(),
-            cmd='ffprobe'
-        )
-
+        self.__metadata_adapter = None
         self.__config: configuration.Config = config
         self._conversion_type: audio_file_converter.ConversionType \
             = audio_file_converter.ConversionType.NONE
@@ -34,7 +31,7 @@ class PlaylistEntry:
         return self._conversion_type
 
     def metadata_successfully_loaded(self) -> bool:
-        return self._media_info_adapter.contains_metadata()
+        return self._metadata_adapter.contains_metadata
 
     def file(self) -> str:
         return self._playlist_entry_data.file
@@ -53,6 +50,21 @@ class PlaylistEntry:
     def _lock(self):
         return self.__lock if self.__lock else contextlib.nullcontext()
 
+    @property
+    def _metadata_adapter(self):
+        if not self.__metadata_adapter:
+            self.__metadata_adapter = metadata_adapter.MetadataAdapter(
+                self._media_info_strategy_factory.get_strategy(
+                    metadata_adapter.MediaInfoStrategyFactory
+                    if self.conversion_type() in metadata_adapter.MEDIA_INFO_STRATEGY_FORMATS
+                    else metadata_adapter.FfprobeStrategy
+                ) if self._media_info_strategy_factory else None,
+                self.file(),
+                self._lock
+            )
+
+        return self.__metadata_adapter
+
     def add_conversion_type(self, conversion_type: audio_file_converter.ConversionType):
         if (
                 audio_file_converter.ConversionType.NONE in self._conversion_type or
@@ -67,10 +79,10 @@ class PlaylistEntry:
             else self.transcoded_file(output_directory)
 
     def get_metadata_tag(self, key) -> str | None:
-        return self._media_info_adapter.get(key)
+        return self._metadata_adapter.get(key)
 
     def transcoded_file(self, output_directory: str) -> str:
-        filename = self._media_info_adapter.formatted_filename()
+        filename = self._metadata_adapter.formatted_filename()
 
         return os.path.join(
             output_directory,
@@ -89,8 +101,7 @@ class PlaylistEntry:
             if self.file():  # pragma: no cover
                 print(f"Determining conversion type for: {self.file()}", flush=True)
 
-            if self.metadata_successfully_loaded():
-                self._determine_conversion_type_from_soundfile()
+            self._determine_conversion_type_from_soundfile()
 
             self._load_conversion_type_attempted = True
 
