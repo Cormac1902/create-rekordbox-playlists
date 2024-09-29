@@ -10,7 +10,7 @@ class EnhancedMultichannelAudioFixer:
         self.transcodes_output_directory = transcodes_output_directory
 
     def fix(self):
-        if audio_file_converter.ConversionType.WAV in self.playlist_entry.conversion_type:
+        if audio_file_converter.ConversionType.WAV in self.playlist_entry.conversion_type():
             output_location = self.playlist_entry.file_location(self.transcodes_output_directory)
 
             print(f"Fixing enhanced multichannel audio: {output_location}", flush=True)

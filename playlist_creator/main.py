@@ -52,11 +52,11 @@ def parse_playlists(
                 file = re.compile(r'File\d+=(.*)').match(playlist_file_lines[i]).group(1)
                 title = re.compile(r'Title\d+=(.*)').match(playlist_file_lines[i + 1]).group(1)
                 length = re.compile(r'Length\d+=(.*)').match(playlist_file_lines[i + 2]).group(1)
-                playlist.playlist_entries.add(file)
-                _playlist_entry_factory.add_playlist_entry(
-                    playlist_parser.PlaylistEntryData(file, title, length)
+                playlist.playlist_entries.append(
+                    _playlist_entry_factory.add_playlist_entry(
+                        playlist_parser.PlaylistEntryData(file, title, length)
+                    )
                 )
-
 
 def tag(tagger: audio_file_tagger.Tagger):
     tagger.tag()
@@ -82,8 +82,7 @@ def write_playlists(playlists_to_write: set[playlist_parser.Playlist],
                      playlist_to_write,
                      config.playlists_output_directory,
                      config.transcodes_output_directory,
-                     playlist_writer_strategy,
-                     _playlist_entry_factory.playlist_entries
+                     playlist_writer_strategy
                  )
                      for playlist_to_write in playlists_to_write]
                  )
@@ -116,7 +115,6 @@ def fix_enhanced_multichannel_audio(playlist_entries: set[playlist_parser.Playli
              for playlist_entry in playlist_entries]
         )
 
-
 if __name__ == '__main__':
     started_at = time.time()
 
@@ -131,24 +129,25 @@ if __name__ == '__main__':
 
     playlists = get_playlists(config_argv.playlists_directory)
 
-    playlist_entry_factory = playlist_parser.PlaylistEntryFactory(config_argv)
+    with playlist_parser.PlaylistEntryManager() as manager:
+        playlist_entry_factory = playlist_parser.PlaylistEntryFactory(config_argv, manager)
 
-    parse_playlists(playlists, playlist_entry_factory)
+        parse_playlists(playlists, playlist_entry_factory)
 
-    write_playlists(playlists, playlist_entry_factory, config_argv)
+        write_playlists(playlists, playlist_entry_factory, config_argv)
 
-    processed_files = set(playlist_entry_factory.playlist_entries.values())
+        processed_files = set(playlist_entry_factory.playlist_entries.values())
 
-    asyncio.run(
-        convert_files(
-            processed_files,
-            audio_file_converter.Converter(config_argv.max_parallel_tasks, config_argv.transcodes_output_directory)
+        asyncio.run(
+            convert_files(
+                processed_files,
+                audio_file_converter.Converter(config_argv.max_parallel_tasks, config_argv.transcodes_output_directory)
+            )
         )
-    )
 
-    update_tags(processed_files, config_argv)
-    fix_enhanced_multichannel_audio(processed_files, config_argv)
+        update_tags(processed_files, config_argv)
+        fix_enhanced_multichannel_audio(processed_files, config_argv)
 
-    finished_at = time.time()
-    elapsed_time = finished_at - started_at
-    print(f"Done in {timedelta(seconds=elapsed_time)}")
+        finished_at = time.time()
+        elapsed_time = finished_at - started_at
+        print(f"Done in {timedelta(seconds=elapsed_time)}")

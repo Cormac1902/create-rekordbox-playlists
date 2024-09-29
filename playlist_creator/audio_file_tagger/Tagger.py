@@ -18,7 +18,7 @@ class Tagger:
         self.transcodes_output_directory = transcodes_output_directory
 
     def tag(self):
-        if self.playlist_entry.conversion_type is not audio_file_converter.ConversionType.NONE:
+        if self.playlist_entry.conversion_type() is not audio_file_converter.ConversionType.NONE:
             output_location = self.playlist_entry.file_location(self.transcodes_output_directory)
             print(f"Updating tags: {output_location}", flush=True)
             with taglib.File(output_location, save_on_exit=True) as file:
