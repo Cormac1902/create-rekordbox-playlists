@@ -1,5 +1,6 @@
 #   pylint: disable=protected-access
 
+import contextlib
 import os
 import unittest
 from unittest.mock import MagicMock
@@ -112,44 +113,52 @@ class TestPlaylistEntry(unittest.TestCase):
         self.assertEqual(test_file, test_playlist_entry.file_location(''))
 
     def test_when_soundfile_format_is_not_allowed_conversion_type_contains_wav(self):
-        test_playlist_entry = playlist_parser.PlaylistEntry(
-            config=configuration.Config(allowed_formats={'wav'})
-        )
-        test_playlist_entry.metadata_successfully_loaded = MagicMock(return_value=True)
-        soundfile.SoundFile = MagicMock(return_value=soundfile.SoundFile)
-        soundfile.SoundFile().format = 'flac'
+        with unittest.mock.patch(
+                'soundfile.SoundFile'
+        ) as mock_soundfile:
+            mock_soundfile.return_value.__enter__().format = 'flac'
+            test_playlist_entry = playlist_parser.PlaylistEntry(
+                config=configuration.Config(allowed_formats={'wav'})
+            )
+            test_playlist_entry.metadata_successfully_loaded = MagicMock(return_value=True)
 
-        self.assertIn(ConversionType.WAV, test_playlist_entry.conversion_type())
+            self.assertIn(ConversionType.WAV, test_playlist_entry.conversion_type())
 
     def test_when_soundfile_format_is_allowed_conversion_type_is_none(self):
-        test_playlist_entry = playlist_parser.PlaylistEntry(
-            config=configuration.Config(allowed_formats={'mp3'})
-        )
-        test_playlist_entry.metadata_successfully_loaded = MagicMock(return_value=True)
-        soundfile.SoundFile = MagicMock(return_value=soundfile.SoundFile)
-        soundfile.SoundFile().format = 'mp3'
+        with unittest.mock.patch(
+                'soundfile.SoundFile'
+        ) as mock_soundfile:
+            mock_soundfile.return_value.__enter__().format = 'mp3'
+            test_playlist_entry = playlist_parser.PlaylistEntry(
+                config=configuration.Config(allowed_formats={'mp3'})
+            )
+            test_playlist_entry.metadata_successfully_loaded = MagicMock(return_value=True)
 
-        self.assertEqual(ConversionType.NONE, test_playlist_entry.conversion_type())
+            self.assertEqual(ConversionType.NONE, test_playlist_entry.conversion_type())
 
     def test_when_soundfile_samplerate_is_over_threshold_conversion_type_is_downsample(self):
-        test_playlist_entry = playlist_parser.PlaylistEntry(
-            config=configuration.Config(allowed_formats={'wav'})
-        )
-        test_playlist_entry.metadata_successfully_loaded = MagicMock(return_value=True)
-        soundfile.SoundFile = MagicMock(return_value=soundfile.SoundFile)
-        soundfile.SoundFile().samplerate = 48001
+        with unittest.mock.patch(
+                'soundfile.SoundFile'
+        ) as mock_soundfile:
+            mock_soundfile.return_value.__enter__().samplerate = 48001
+            test_playlist_entry = playlist_parser.PlaylistEntry(
+                config=configuration.Config(allowed_formats={'wav'})
+            )
+            test_playlist_entry.metadata_successfully_loaded = MagicMock(return_value=True)
 
-        self.assertIn(ConversionType.DOWNSAMPLE, test_playlist_entry.conversion_type())
+            self.assertIn(ConversionType.DOWNSAMPLE, test_playlist_entry.conversion_type())
 
     def test_when_soundfile_subtype_is_PCM_24_conversion_type_is_BIT_24(self):
-        test_playlist_entry = playlist_parser.PlaylistEntry(
-            config=configuration.Config(allowed_formats={'wav'})
-        )
-        test_playlist_entry.metadata_successfully_loaded = MagicMock(return_value=True)
-        soundfile.SoundFile = MagicMock(return_value=soundfile.SoundFile)
-        soundfile.SoundFile().subtype = 'PCM_24'
+        with unittest.mock.patch(
+                'soundfile.SoundFile'
+        ) as mock_soundfile:
+            mock_soundfile.return_value.__enter__().subtype = 'PCM_24'
+            test_playlist_entry = playlist_parser.PlaylistEntry(
+                config=configuration.Config(allowed_formats={'wav'})
+            )
+            test_playlist_entry.metadata_successfully_loaded = MagicMock(return_value=True)
 
-        self.assertIn(ConversionType.BIT_24, test_playlist_entry.conversion_type())
+            self.assertIn(ConversionType.BIT_24, test_playlist_entry.conversion_type())
 
     def test_get_metadata_tag_forwards_requests_to_media_info_adapter(self):
         test_playlist_entry = playlist_parser.PlaylistEntry()
@@ -186,7 +195,7 @@ class TestPlaylistEntry(unittest.TestCase):
     def test_when_conversion_type_is_called_twice_then_soundfile_is_only_called_once(self):
         test_playlist_entry = playlist_parser.PlaylistEntry()
         test_playlist_entry.metadata_successfully_loaded = MagicMock(return_value=True)
-        soundfile.SoundFile = MagicMock(return_value=soundfile.SoundFile)
+        soundfile.SoundFile = MagicMock()
 
         test_playlist_entry.conversion_type()
         test_playlist_entry.conversion_type()
