@@ -1,6 +1,5 @@
 #   pylint: disable=protected-access
 
-import contextlib
 import os
 import unittest
 from unittest.mock import MagicMock
