@@ -10,7 +10,6 @@ class PlsWriterStrategy(PlaylistWriterStrategy):
 
     def write_playlist(self,
                        playlist: playlist_parser.Playlist,
-                       playlist_entries,
                        playlists_output_directory: str,
                        transcodes_output_directory: str):
         playlist_file = os.sep.join([playlists_output_directory, f"{playlist.title}.pls"])
@@ -20,8 +19,7 @@ class PlsWriterStrategy(PlaylistWriterStrategy):
             file.write('[playlist]\n')
             i = 1
 
-            for playlist_entry_file in playlist.playlist_entries:
-                playlist_entry = playlist_entries[playlist_entry_file]
+            for playlist_entry in playlist.playlist_entries:
                 if playlist_entry.metadata_successfully_loaded():
                     file.write(
                         f"File{i}={playlist_entry.file_location(transcodes_output_directory)}\n")

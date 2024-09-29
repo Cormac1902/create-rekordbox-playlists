@@ -9,12 +9,12 @@ class TestPlaylistWriterContext(unittest.TestCase):
         test_playlist = playlist_parser.Playlist()
         test_playlist_writer_strategy = TestPlaylistWriterStrategy()
         test_playlist_writer_context = playlist_writer.PlaylistWriterContext(
-            test_playlist, '', '', test_playlist_writer_strategy, []
+            test_playlist, '', '', test_playlist_writer_strategy
         )
 
         test_playlist_writer_context.write_playlist()
         test_playlist_writer_strategy.write_playlist.assert_called_with(
-            test_playlist, [], '', ''
+            test_playlist, '', ''
         )
 
 

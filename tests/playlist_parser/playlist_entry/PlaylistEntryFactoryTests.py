@@ -42,6 +42,7 @@ class TestPlaylistEntryFactory(unittest.TestCase):
         test_manager = playlist_parser.PlaylistEntryManager()
         test_manager.dict = MagicMock(return_value={})
         test_manager.Lock = MagicMock(return_value=None)
+        test_manager.RLock = MagicMock(return_value=None)
         test_playlist_entry_factory = playlist_parser.PlaylistEntryFactory(manager=test_manager)
         test_playlist_entry = playlist_parser.PlaylistEntry()
         test_manager.PlaylistEntry = MagicMock(return_value=test_playlist_entry)

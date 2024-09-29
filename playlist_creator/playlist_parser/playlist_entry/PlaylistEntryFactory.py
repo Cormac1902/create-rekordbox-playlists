@@ -2,9 +2,7 @@ import contextlib
 import multiprocessing
 
 from playlist_creator import configuration
-from .PlaylistEntry import PlaylistEntry
 from .PlaylistEntryData import PlaylistEntryData
-from .PlaylistEntryLocks import PlaylistEntryLocks
 from .PlaylistEntryManager import PlaylistEntryManager
 
 
@@ -30,12 +28,11 @@ class PlaylistEntryFactory:
     def _lock(self):
         return self.__lock if self.__lock else contextlib.nullcontext()
 
-    def add_playlist_entry(self, playlist_entry_data: PlaylistEntryData) -> PlaylistEntry:
+    def add_playlist_entry(self, playlist_entry_data: PlaylistEntryData):
         with self._lock:
             if playlist_entry_data.file not in self._playlist_entries:
                 self._playlist_entries[playlist_entry_data.file] = self._manager.PlaylistEntry(
-                    PlaylistEntryLocks(
-                        self._manager.Lock(), self._manager.Lock(), self._manager.dict()),
+                    self._manager.RLock(),
                     playlist_entry_data,
                     self._config
                 )

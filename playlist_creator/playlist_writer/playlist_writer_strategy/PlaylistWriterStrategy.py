@@ -9,7 +9,6 @@ class PlaylistWriterStrategy(ABC):
     @abstractmethod
     def write_playlist(self,
                        playlist: playlist_parser.Playlist,
-                       playlist_entries,
                        playlists_output_directory: str,
                        transcodes_output_directory: str):
         pass

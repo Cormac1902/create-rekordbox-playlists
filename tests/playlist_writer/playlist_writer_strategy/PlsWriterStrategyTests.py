@@ -1,6 +1,6 @@
 import os
 import unittest
-from unittest.mock import MagicMock, PropertyMock, call, patch
+from unittest.mock import MagicMock, call, patch
 
 from playlist_creator import playlist_parser, playlist_writer
 
@@ -20,7 +20,7 @@ class TestPlsWriterStrategy(unittest.TestCase):
             )
         )
         test_playlist = playlist_parser.Playlist(
-            test_title, test_length, {test_title}
+            test_title, test_length, [test_playlist_entry]
         )
         test_playlist_entry.file_location = MagicMock(return_value=test_filepath)
         test_playlist_entry.metadata_successfully_loaded = MagicMock(return_value=True)
@@ -28,7 +28,6 @@ class TestPlsWriterStrategy(unittest.TestCase):
         with patch("builtins.open", unittest.mock.mock_open(read_data="data")) as mock_open:
             test_pls_writer_strategy.write_playlist(
                 test_playlist,
-                {test_title: test_playlist_entry},
                 test_filepath,
                 test_transcodes_output_directory
             )

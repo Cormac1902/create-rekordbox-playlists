@@ -52,11 +52,11 @@ def parse_playlists(
                 file = re.compile(r'File\d+=(.*)').match(playlist_file_lines[i]).group(1)
                 title = re.compile(r'Title\d+=(.*)').match(playlist_file_lines[i + 1]).group(1)
                 length = re.compile(r'Length\d+=(.*)').match(playlist_file_lines[i + 2]).group(1)
-                playlist.playlist_entries.add(file)
-                _playlist_entry_factory.add_playlist_entry(
-                    playlist_parser.PlaylistEntryData(file, title, length)
+                playlist.playlist_entries.append(
+                    _playlist_entry_factory.add_playlist_entry(
+                        playlist_parser.PlaylistEntryData(file, title, length)
+                    )
                 )
-
 
 def tag(tagger: audio_file_tagger.Tagger):
     tagger.tag()
@@ -82,8 +82,7 @@ def write_playlists(playlists_to_write: set[playlist_parser.Playlist],
                      playlist_to_write,
                      config.playlists_output_directory,
                      config.transcodes_output_directory,
-                     playlist_writer_strategy,
-                     _playlist_entry_factory.playlist_entries
+                     playlist_writer_strategy
                  )
                      for playlist_to_write in playlists_to_write]
                  )

@@ -1,5 +1,5 @@
 import contextlib
-import multiprocessing.managers
+import multiprocessing
 import os
 
 import soundfile
@@ -7,21 +7,19 @@ import soundfile
 from playlist_creator import audio_file_converter, configuration
 from .MediaInfoAdapter import MediaInfoAdapter
 from .PlaylistEntryData import PlaylistEntryData
-from .PlaylistEntryLocks import PlaylistEntryLocks
 
 
 class PlaylistEntry:
     __soundfile: soundfile.SoundFile | None = None
 
     def __init__(self,
-                 locks: PlaylistEntryLocks = PlaylistEntryLocks(),
+                 lock: multiprocessing.RLock = None,
                  playlist_entry_data: PlaylistEntryData = PlaylistEntryData(),
                  config: configuration.Config = configuration.Config()):
         self._playlist_entry_data = playlist_entry_data
-        self.__lock = locks.lock
+        self.__lock = lock
         self._media_info_adapter = MediaInfoAdapter(
-            locks.media_info_adapter_lock,
-            locks.media_info_adapter_dict,
+            self._lock,
             filename=self.file(),
             cmd='ffprobe'
         )

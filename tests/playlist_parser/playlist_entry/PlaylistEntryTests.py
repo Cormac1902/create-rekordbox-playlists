@@ -2,11 +2,11 @@
 
 import os
 import unittest
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock
 
 import soundfile
 
-from playlist_creator import ConversionType, PlaylistEntryLocks, configuration, playlist_parser
+from playlist_creator import ConversionType, configuration, playlist_parser
 
 
 class TestPlaylistEntry(unittest.TestCase):
@@ -17,7 +17,7 @@ class TestPlaylistEntry(unittest.TestCase):
 
     def test_lock_is_initialised(self):
         test_lock = MagicMock()
-        test_playlist_entry = playlist_parser.PlaylistEntry(PlaylistEntryLocks(test_lock))
+        test_playlist_entry = playlist_parser.PlaylistEntry(test_lock)
 
         self.assertEqual(test_playlist_entry._lock, test_lock)
 
