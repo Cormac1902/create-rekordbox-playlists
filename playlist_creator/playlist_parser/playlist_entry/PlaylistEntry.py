@@ -10,8 +10,6 @@ from .PlaylistEntryData import PlaylistEntryData
 
 
 class PlaylistEntry:
-    __soundfile: soundfile.SoundFile | None = None
-
     def __init__(self,
                  lock: multiprocessing.RLock = None,
                  playlist_entry_data: PlaylistEntryData = PlaylistEntryData(),
@@ -92,25 +90,19 @@ class PlaylistEntry:
                 print(f"Determining conversion type for: {self.file()}", flush=True)
 
             if self.metadata_successfully_loaded():
-                playlist_entry_soundfile = self._soundfile()
-
-                if playlist_entry_soundfile.format not in self._config.allowed_formats:
-                    self.add_conversion_type(audio_file_converter.ConversionType.WAV)
-                if (isinstance(playlist_entry_soundfile.samplerate, int)
-                        and playlist_entry_soundfile.samplerate > 48000):
-                    self.add_conversion_type(audio_file_converter.ConversionType.DOWNSAMPLE)
-                if playlist_entry_soundfile.subtype == 'PCM_24':
-                    self.add_conversion_type(audio_file_converter.ConversionType.BIT_24)
-
-                self.__soundfile = None
+                self._determine_conversion_type_from_soundfile()
 
             self._load_conversion_type_attempted = True
 
-    def _soundfile(self) -> soundfile.SoundFile:
-        if not self.__soundfile:
-            self.__soundfile = soundfile.SoundFile(self.file())
-
-        return self.__soundfile
+    def _determine_conversion_type_from_soundfile(self):
+        with soundfile.SoundFile(self.file()) as playlist_entry_soundfile:
+            if playlist_entry_soundfile.format not in self._config.allowed_formats:
+                self.add_conversion_type(audio_file_converter.ConversionType.WAV)
+            if (isinstance(playlist_entry_soundfile.samplerate, int)
+                    and playlist_entry_soundfile.samplerate > 48000):
+                self.add_conversion_type(audio_file_converter.ConversionType.DOWNSAMPLE)
+            if playlist_entry_soundfile.subtype == 'PCM_24':
+                self.add_conversion_type(audio_file_converter.ConversionType.BIT_24)
 
     def _extension(self) -> str:
         file = self.file()
