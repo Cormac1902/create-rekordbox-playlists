@@ -76,7 +76,7 @@ class MetadataAdapter:
             filepath if sys.platform != 'win32' else filepath.replace(':', ' '),
             replacement_text=' ',
             platform='auto'
-        )
+        ) if filepath else ''
 
     def get(self, key) -> str | None:
         metadata = self._get_metadata()
