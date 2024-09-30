@@ -138,6 +138,18 @@ class TestPlaylistEntry(unittest.TestCase):
             self.assertIn(audio_file_converter.ConversionType.BIT_24,
                           test_playlist_entry.conversion_type())
 
+    def test_get_metadata_forwards_requests_to_metadata_adapter(self):
+        test_metadata_adapter = playlist_parser.MetadataAdapter()
+        playlist_parser.metadata_adapter.MetadataAdapter = MagicMock(
+            return_value=test_metadata_adapter
+        )
+        test_playlist_entry = playlist_parser.PlaylistEntry()
+        test_metadata_adapter.load_metadata = MagicMock()
+
+        test_playlist_entry.get_metadata()
+
+        test_metadata_adapter.load_metadata.assert_called_once()
+
     def test_get_metadata_tag_forwards_requests_to_metadata_adapter(self):
         test_metadata_adapter = playlist_parser.MetadataAdapter()
         playlist_parser.metadata_adapter.MetadataAdapter = MagicMock(
