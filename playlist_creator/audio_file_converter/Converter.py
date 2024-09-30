@@ -57,7 +57,7 @@ class Converter:
 
         output_location = playlist_entry.transcoded_file(self.transcodes_output_directory)
 
-        if not os.path.isfile(output_location):
+        if not os.path.isfile(output_location) and playlist_entry.metadata_successfully_loaded():
             (ffmpeg, message) = _prepare_ffmpeg(playlist_entry, output_location)
 
             async with self.limit:
