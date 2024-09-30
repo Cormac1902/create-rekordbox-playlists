@@ -22,6 +22,7 @@ class PlaylistEntry:
         self.__config: configuration.Config = config
         self._conversion_type: audio_file_converter.ConversionType \
             = audio_file_converter.ConversionType.NONE
+        self._format: str | None = None
         self._load_conversion_type_attempted: bool = False
 
     def conversion_type(self) -> audio_file_converter.ConversionType:
@@ -30,8 +31,14 @@ class PlaylistEntry:
 
         return self._conversion_type
 
+    def format(self) -> str:
+        if not self._load_conversion_type_attempted:
+            self._determine_conversion_type()
+
+        return self._format
+
     def metadata_successfully_loaded(self) -> bool:
-        return self._metadata_adapter.contains_metadata
+        return self._metadata_adapter().contains_metadata
 
     def file(self) -> str:
         return self._playlist_entry_data.file
@@ -50,13 +57,12 @@ class PlaylistEntry:
     def _lock(self):
         return self.__lock if self.__lock else contextlib.nullcontext()
 
-    @property
     def _metadata_adapter(self):
         if not self.__metadata_adapter:
             self.__metadata_adapter = metadata_adapter.MetadataAdapter(
                 self._media_info_strategy_factory.get_strategy(
-                    metadata_adapter.MediaInfoStrategyFactory
-                    if self.conversion_type() in metadata_adapter.MEDIA_INFO_STRATEGY_FORMATS
+                    metadata_adapter.MediaInfoStrategy
+                    if self.format() in metadata_adapter.MEDIA_INFO_STRATEGY_FORMATS
                     else metadata_adapter.FfprobeStrategy
                 ) if self._media_info_strategy_factory else None,
                 self.file(),
@@ -79,10 +85,10 @@ class PlaylistEntry:
             else self.transcoded_file(output_directory)
 
     def get_metadata_tag(self, key) -> str | None:
-        return self._metadata_adapter.get(key)
+        return self._metadata_adapter().get(key)
 
     def transcoded_file(self, output_directory: str) -> str:
-        filename = self._metadata_adapter.formatted_filename()
+        filename = self._metadata_adapter().formatted_filename()
 
         return os.path.join(
             output_directory,
@@ -107,7 +113,8 @@ class PlaylistEntry:
 
     def _determine_conversion_type_from_soundfile(self):
         with soundfile.SoundFile(self.file()) as playlist_entry_soundfile:
-            if playlist_entry_soundfile.format not in self._config.allowed_formats:
+            self._format = playlist_entry_soundfile.format
+            if self._format not in self._config.allowed_formats:
                 self.add_conversion_type(audio_file_converter.ConversionType.WAV)
             if (isinstance(playlist_entry_soundfile.samplerate, int)
                     and playlist_entry_soundfile.samplerate > 48000):

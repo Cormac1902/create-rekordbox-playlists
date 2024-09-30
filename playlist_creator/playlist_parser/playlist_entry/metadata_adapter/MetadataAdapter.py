@@ -2,7 +2,6 @@ import contextlib
 import multiprocessing
 import os
 import sys
-from abc import abstractmethod
 
 from pathvalidate import sanitize_filepath
 
@@ -21,27 +20,22 @@ class MetadataAdapter:
         self._load_metadata_attempted: bool = self.__lock is None
 
     @property
-    @abstractmethod
     def album(self) -> str:
         return self.get('album')
 
     @property
-    @abstractmethod
     def album_artist(self) -> str:
         return self.get('album_artist')
 
     @property
-    @abstractmethod
     def disc(self) -> int | None:
         return self._strip_total('disc')
 
     @property
-    @abstractmethod
     def title(self) -> str:
         return self.get('title')
 
     @property
-    @abstractmethod
     def track(self) -> int | None:
         return self._strip_total('track')
 
@@ -79,6 +73,9 @@ class MetadataAdapter:
         ) if filepath else ''
 
     def get(self, key) -> str | None:
+        if not self.contains_metadata:
+            return None
+
         metadata = self._get_metadata()
 
         if key in metadata:
@@ -94,26 +91,25 @@ class MetadataAdapter:
         return None
 
     def _get_metadata(self) -> dict:
-        with self._lock:
-            if not self._load_metadata_attempted:
-                self._load_metadata()
+        if not self._load_metadata_attempted:
+            self._load_metadata()
 
-            return self._metadata
+        return self._metadata
 
     def _load_metadata(self):
         with self._lock:
             if self._load_metadata_attempted:
                 return
 
-            self._load_metadata_attempted = True
-
             self._metadata.update(self._strategy.get_metadata(self._filename))
+
+            self._load_metadata_attempted = True
 
     def _strip_total(self, key) -> int | None:
         number = self.get(key)
         if number is not None:
             try:
-                return int(number.rsplit('/')[0])
+                return int(number.rsplit('/')[0]) or int(number)
             except ValueError:
                 print(
                     f"Could not fetch {key} for {self._filename}. Number fetched: {number}",

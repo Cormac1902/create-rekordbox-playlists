@@ -1,4 +1,4 @@
 from .FfprobeStrategy import *
-from .IMediaInfoStrategy import IMediaInfoStrategy
+from .IMediaInfoStrategy import *
 from .MediaInfoStrategy import *
 from .MediaInfoStrategyFactory import *

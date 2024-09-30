@@ -35,8 +35,9 @@ class TestPlaylistEntry(unittest.TestCase):
             media_info_strategy_factory=test_media_info_strategy_factory
         )
         test_playlist_entry.conversion_type = MagicMock(return_value=ConversionType.NONE)
+        test_playlist_entry.format = MagicMock(return_value='WAV')
 
-        self.assertEqual(test_playlist_entry._metadata_adapter, test_metadata_adapter)
+        self.assertEqual(test_playlist_entry._metadata_adapter(), test_metadata_adapter)
         playlist_parser.metadata_adapter.MetadataAdapter.assert_called_once()
 
     @patch.object(
