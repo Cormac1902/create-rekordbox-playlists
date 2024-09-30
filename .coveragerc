@@ -1,0 +1,3 @@
+[report]
+omit =
+    playlist_creator/playlist_writer/playlist_writer_strategy/PlaylistWriterStrategy.py
