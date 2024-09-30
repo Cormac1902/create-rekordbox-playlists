@@ -143,7 +143,7 @@ async def main(config: configuration.Config):
 
             await convert_files(
                 processed_files,
-                audio_file_converter.Converter(config.max_parallel_tasks,
+                audio_file_converter.Converter(config.max_parallel_tasks ^ 2,
                                                config.transcodes_output_directory)
             )
 
