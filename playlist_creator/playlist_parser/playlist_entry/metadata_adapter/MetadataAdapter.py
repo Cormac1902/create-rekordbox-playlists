@@ -90,13 +90,7 @@ class MetadataAdapter:
 
         return None
 
-    def _get_metadata(self) -> dict:
-        if not self._load_metadata_attempted:
-            self._load_metadata()
-
-        return self._metadata
-
-    def _load_metadata(self):
+    def load_metadata(self):
         with self._lock:
             if self._load_metadata_attempted:
                 return
@@ -104,6 +98,12 @@ class MetadataAdapter:
             self._metadata.update(self._strategy.get_metadata(self._filename))
 
             self._load_metadata_attempted = True
+
+    def _get_metadata(self) -> dict:
+        if not self._load_metadata_attempted:
+            self.load_metadata()
+
+        return self._metadata
 
     def _strip_total(self, key) -> int | None:
         number = self.get(key)

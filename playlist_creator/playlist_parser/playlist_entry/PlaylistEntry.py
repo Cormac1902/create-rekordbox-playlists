@@ -38,6 +38,9 @@ class PlaylistEntry:
     def title(self) -> str:
         return self._playlist_entry_data.title
 
+    def get_metadata(self):
+        self._metadata_adapter().load_metadata()
+
     @property
     def _lock(self):
         return self.__lock if self.__lock else contextlib.nullcontext()
