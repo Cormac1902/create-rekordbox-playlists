@@ -49,7 +49,8 @@ class IMediaInfoStrategy(ABC):
         tags = self._get_metadata_from_cmd(cmd_output)
 
         if tags is None:  # pragma: no cover
-            print(f"Failed to load metadata for: {filename}", file=sys.stderr, flush=True)
+            if filename:
+                print(f"Failed to load metadata for: {filename}", file=sys.stderr, flush=True)
         else:
             return {tag: self._get_tag(tags, tag) for tag in TAGS_TO_LOAD}
 
