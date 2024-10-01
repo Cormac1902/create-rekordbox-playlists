@@ -66,6 +66,8 @@ def write_playlist(playlist_to_write: playlist_writer.PlaylistWriterContext):
 def get_metadata(playlist_entry: playlist_parser.PlaylistEntry):
     playlist_entry.get_metadata()
 
+    return playlist_entry
+
 
 def post_process(post_processor: post_processing.PostProcessor,
                  playlist_entry,
@@ -94,7 +96,7 @@ def write_playlists(
             for playlist_to_write in playlists_to_write
         ]
     )
-    pool.map_async(
+    return pool.map_async(
         get_metadata,
         [playlist_entry
          for playlist_entry
@@ -105,26 +107,33 @@ def write_playlists(
 
 async def convert_files(playlist_entries: set[playlist_parser.PlaylistEntry],
                         converter: audio_file_converter.Converter):
-    ffmpeg_tasks = set()
-
-    for playlist_entry in playlist_entries:
-        ffmpeg_tasks.add(asyncio.create_task(converter.convert_file(playlist_entry)))
+    ffmpeg_tasks = {
+        asyncio.create_task(converter.convert_file(playlist_entry))
+        for playlist_entry
+        in playlist_entries
+    }
 
     await asyncio.gather(*ffmpeg_tasks)
 
 
 def post_process_playlist_entries(playlist_entries: set[playlist_parser.PlaylistEntry],
                                   config: configuration.Config,
-                                  pool: multiprocessing.Pool):
+                                  pool: multiprocessing.Pool,
+                                  add_asynchronously = False):
     post_processor = post_processing.Tagger(
         post_processing.EnhancedMultichannelAudioFixer()
     )
 
-    pool.starmap(
-        post_process, [
-            (post_processor, playlist_entry, config.transcodes_output_directory)
-            for playlist_entry in playlist_entries
-        ]
+    tasks = [
+        (post_processor, playlist_entry, config.transcodes_output_directory)
+        for playlist_entry
+        in playlist_entries
+    ]
+
+    pool.starmap_async(
+        post_process, tasks
+    ) if add_asynchronously else pool.starmap(
+        post_process, tasks
     )
 
 
@@ -137,17 +146,34 @@ async def main(config: configuration.Config):
         parse_playlists(playlists, playlist_entry_factory)
 
         with multiprocessing.Pool(config.max_parallel_tasks) as pool:
-            write_playlists(playlists, playlist_entry_factory, config, pool)
+            playlist_entries = write_playlists(playlists, playlist_entry_factory, config, pool)
 
-            processed_files = playlist_entry_factory.playlist_entries.values()
+            files_to_post_process, files_to_convert = set(), set()
+            [
+                (
+                    files_to_post_process
+                    if playlist_entry.transcoded_file_exists(config.transcodes_output_directory)
+                    else files_to_convert
+                ).add(playlist_entry)
+                for playlist_entry
+                in playlist_entries.get()
+                if not playlist_entry.conversion_type_is_none()
+            ]
+
+            post_process_playlist_entries(
+                files_to_post_process,
+                config,
+                pool,
+                len(files_to_convert) > 0
+            )
 
             await convert_files(
-                processed_files,
-                audio_file_converter.Converter(config.max_parallel_tasks ^ 2,
+                files_to_convert,
+                audio_file_converter.Converter(config.max_parallel_tasks,
                                                config.transcodes_output_directory)
             )
 
-            post_process_playlist_entries(processed_files, config, pool)
+            post_process_playlist_entries(files_to_convert, config, pool)
 
 
 if __name__ == '__main__':
