@@ -10,14 +10,14 @@ from .SoundFileAdapter import SoundFileAdapter
 
 class PlaylistEntry:
     def __init__(self,
-                 lock: multiprocessing.RLock = None,
+                 lock: multiprocessing.Lock = None,
                  playlist_entry_data: PlaylistEntryData = PlaylistEntryData(),
-                 config: configuration.Config = configuration.Config(),
+                 soundfile_adapter: SoundFileAdapter = SoundFileAdapter(),
                  media_info_strategy_factory: metadata_adapter.MediaInfoStrategyFactory = None):
         self._media_info_strategy_factory = media_info_strategy_factory
         self._playlist_entry_data = playlist_entry_data
         self.__lock = lock
-        self._soundfile_adapter = SoundFileAdapter(self.file(), self._lock, config)
+        self._soundfile_adapter = soundfile_adapter
         self.__metadata_adapter = None
 
     def conversion_type(self) -> audio_file_converter.ConversionType:

@@ -98,61 +98,10 @@ class TestPlaylistEntry(unittest.TestCase):
     def test_when_conversion_type_is_not_none_file_location_returns_transcoded_file(self):
         test_file = 'test'
         test_playlist_entry = playlist_parser.PlaylistEntry()
+        test_playlist_entry.conversion_type = MagicMock(return_value=audio_file_converter.ConversionType.WAV)
         test_playlist_entry.transcoded_file = MagicMock(return_value=test_file)
 
         self.assertEqual(test_file, test_playlist_entry.file_location(''))
-
-    def test_when_soundfile_format_is_not_allowed_conversion_type_contains_wav(self):
-        with unittest.mock.patch(
-                'soundfile.SoundFile'
-        ) as mock_soundfile:
-            mock_soundfile.return_value.__enter__().format = 'flac'
-            test_playlist_entry = playlist_parser.PlaylistEntry(
-                config=configuration.Config(allowed_formats={'wav'})
-            )
-            test_playlist_entry.metadata_successfully_loaded = MagicMock(return_value=True)
-
-            self.assertIn(audio_file_converter.ConversionType.WAV,
-                          test_playlist_entry.conversion_type())
-
-    def test_when_soundfile_format_is_allowed_conversion_type_is_none(self):
-        with unittest.mock.patch(
-                'soundfile.SoundFile'
-        ) as mock_soundfile:
-            mock_soundfile.return_value.__enter__().format = 'mp3'
-            test_playlist_entry = playlist_parser.PlaylistEntry(
-                config=configuration.Config(allowed_formats={'mp3'})
-            )
-            test_playlist_entry.metadata_successfully_loaded = MagicMock(return_value=True)
-
-            self.assertEqual(audio_file_converter.ConversionType.NONE,
-                             test_playlist_entry.conversion_type())
-
-    def test_when_soundfile_samplerate_is_over_threshold_conversion_type_is_downsample(self):
-        with unittest.mock.patch(
-                'soundfile.SoundFile'
-        ) as mock_soundfile:
-            mock_soundfile.return_value.__enter__().samplerate = 48001
-            test_playlist_entry = playlist_parser.PlaylistEntry(
-                config=configuration.Config(allowed_formats={'wav'})
-            )
-            test_playlist_entry.metadata_successfully_loaded = MagicMock(return_value=True)
-
-            self.assertIn(audio_file_converter.ConversionType.DOWNSAMPLE,
-                          test_playlist_entry.conversion_type())
-
-    def test_when_soundfile_subtype_is_PCM_24_conversion_type_is_BIT_24(self):
-        with unittest.mock.patch(
-                'soundfile.SoundFile'
-        ) as mock_soundfile:
-            mock_soundfile.return_value.__enter__().subtype = 'PCM_24'
-            test_playlist_entry = playlist_parser.PlaylistEntry(
-                config=configuration.Config(allowed_formats={'wav'})
-            )
-            test_playlist_entry.metadata_successfully_loaded = MagicMock(return_value=True)
-
-            self.assertIn(audio_file_converter.ConversionType.BIT_24,
-                          test_playlist_entry.conversion_type())
 
     def test_transcoded_file_exists_calls_os_path_isfile(self):
         test_transcoded_file = 'test.flac'
@@ -212,7 +161,6 @@ class TestPlaylistEntry(unittest.TestCase):
         playlist_parser.metadata_adapter.MetadataAdapter = MagicMock(
             return_value=test_metadata_adapter
         )
-        test_playlist_entry._load_conversion_type_attempted = True
 
         self.assertEqual('', test_playlist_entry.transcoded_file(r'C:\test'))
 
@@ -236,17 +184,6 @@ class TestPlaylistEntry(unittest.TestCase):
             os.path.join(test_output_directory, test_filename),
             test_playlist_entry.transcoded_file(test_output_directory)
         )
-
-    def test_when_conversion_type_is_called_twice_then_soundfile_is_only_called_once(self):
-        test_playlist_entry = playlist_parser.PlaylistEntry()
-        test_playlist_entry.metadata_successfully_loaded = MagicMock(return_value=True)
-        soundfile.SoundFile = MagicMock()
-        os.path.exists = MagicMock(return_value=True)
-
-        test_playlist_entry.conversion_type()
-        test_playlist_entry.conversion_type()
-
-        soundfile.SoundFile.assert_called_once()
 
     def test_when_conversion_type_is_downsample_transcoded_file_returns_original_format(self):
         test_filename = 'test'
