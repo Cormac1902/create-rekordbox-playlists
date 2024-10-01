@@ -12,7 +12,7 @@ class MetadataAdapter:
     def __init__(self,
                  strategy: media_info_strategy.IMediaInfoStrategy = None,
                  filename: str = None,
-                 lock: multiprocessing.RLock = None):
+                 lock: multiprocessing.Lock = None):
         self._filename = filename
         self._metadata: dict = {}
         self._strategy = strategy

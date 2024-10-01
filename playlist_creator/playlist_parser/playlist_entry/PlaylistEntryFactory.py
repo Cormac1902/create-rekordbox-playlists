@@ -5,6 +5,7 @@ from playlist_creator import configuration
 from . import metadata_adapter
 from .PlaylistEntryData import PlaylistEntryData
 from .PlaylistEntryManager import PlaylistEntryManager
+from .SoundFileAdapter import SoundFileAdapter
 
 
 class PlaylistEntryFactory:
@@ -34,9 +35,9 @@ class PlaylistEntryFactory:
         with self._lock:
             if playlist_entry_data.file not in self._playlist_entries:
                 self._playlist_entries[playlist_entry_data.file] = self._manager.PlaylistEntry(
-                    self._manager.RLock(),
+                    self._manager.Lock(),
                     playlist_entry_data,
-                    self._config,
+                    SoundFileAdapter(playlist_entry_data.file, self._manager.Lock(), self._config),
                     self._media_info_strategy_factory
                 )
 
