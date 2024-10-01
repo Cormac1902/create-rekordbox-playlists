@@ -68,6 +68,22 @@ class TestPlaylistEntry(unittest.TestCase):
 
         self.assertEqual(test_playlist_entry.title(), test_title)
 
+    def test_when_conversion_type_is_none_conversion_type_is_none_returns_true(self):
+        test_playlist_entry = playlist_parser.PlaylistEntry()
+        test_playlist_entry.conversion_type = MagicMock(
+            return_value=audio_file_converter.ConversionType.NONE
+        )
+
+        self.assertTrue(test_playlist_entry.conversion_type_is_none())
+
+    def test_when_conversion_type_is_not_none_conversion_type_is_none_returns_false(self):
+        test_playlist_entry = playlist_parser.PlaylistEntry()
+        test_playlist_entry.conversion_type = MagicMock(
+            return_value=audio_file_converter.ConversionType.WAV
+        )
+
+        self.assertFalse(test_playlist_entry.conversion_type_is_none())
+
     def test_when_conversion_type_is_none_file_location_returns_original_file(self):
         test_file = 'test'
         test_playlist_entry = playlist_parser.PlaylistEntry(
@@ -137,6 +153,32 @@ class TestPlaylistEntry(unittest.TestCase):
 
             self.assertIn(audio_file_converter.ConversionType.BIT_24,
                           test_playlist_entry.conversion_type())
+
+    def test_transcoded_file_exists_calls_os_path_isfile(self):
+        test_transcoded_file = 'test.flac'
+        test_playlist_entry = playlist_parser.PlaylistEntry()
+        os.path.isfile = MagicMock(return_value=True)
+        test_playlist_entry.transcoded_file = MagicMock(return_value=test_transcoded_file)
+
+        test_playlist_entry.transcoded_file_exists('')
+        os.path.isfile.assert_called_with(test_transcoded_file)
+
+    def test_when_transcoded_file_exists_then_transcoded_file_exists_returns_true(self):
+        test_transcoded_file = 'test.flac'
+        test_playlist_entry = playlist_parser.PlaylistEntry()
+        os.path.isfile = MagicMock(return_value=True)
+        test_playlist_entry.transcoded_file = MagicMock(return_value=test_transcoded_file)
+
+        self.assertTrue(test_playlist_entry.transcoded_file_exists(''))
+
+    def test_when_transcoded_file_does_not_exist_then_transcoded_file_exists_returns_false(self):
+        test_transcoded_file = 'test.flac'
+        test_playlist_entry = playlist_parser.PlaylistEntry()
+        os.path.isfile = MagicMock(return_value=False)
+        test_playlist_entry.transcoded_file = MagicMock(return_value=test_transcoded_file)
+
+        self.assertFalse(test_playlist_entry.transcoded_file_exists(''))
+
 
     def test_get_metadata_forwards_requests_to_metadata_adapter(self):
         test_metadata_adapter = playlist_parser.MetadataAdapter()

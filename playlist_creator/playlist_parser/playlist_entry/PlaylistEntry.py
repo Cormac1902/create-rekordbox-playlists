@@ -23,6 +23,9 @@ class PlaylistEntry:
     def conversion_type(self) -> audio_file_converter.ConversionType:
         return self._soundfile_adapter.conversion_type
 
+    def conversion_type_is_none(self) -> bool:
+        return audio_file_converter.ConversionType.NONE in self.conversion_type()
+
     def format(self) -> str:
         return self._soundfile_adapter.format
 
@@ -77,6 +80,9 @@ class PlaylistEntry:
             else self._extension()
             }"
         ) if filename else ''
+
+    def transcoded_file_exists(self, output_directory) -> bool:
+        return os.path.isfile(self.transcoded_file(output_directory))
 
     def _extension(self) -> str:
         file = self.file()
