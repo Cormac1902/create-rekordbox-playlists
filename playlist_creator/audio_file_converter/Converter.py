@@ -57,15 +57,18 @@ class Converter:
             print(f"No processing needed for: {playlist_entry.file()}")
             return
 
+        if not playlist_entry.metadata_successfully_loaded():
+            return
+
         output_location = playlist_entry.transcoded_file(self.transcodes_output_directory)
 
-        if not os.path.isfile(output_location) and playlist_entry.metadata_successfully_loaded():
+        if not os.path.isfile(output_location):
             (ffmpeg, message) = _prepare_ffmpeg(playlist_entry, output_location)
 
-            async with self.limit:
-                if self.limit.locked():
-                    print(f"Waiting to convert: {playlist_entry.file()}")
+            if self.limit.locked():
+                print(f"Waiting to convert: {playlist_entry.file()}")
 
+            async with self.limit:
                 @ffmpeg.on("start")
                 def on_start(_):
                     print(f"{message}: {playlist_entry.file()}")
