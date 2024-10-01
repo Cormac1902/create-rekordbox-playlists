@@ -45,6 +45,7 @@ def parse_playlists(
         playlists_to_parse, _playlist_entry_factory: playlist_parser.PlaylistEntryFactory
 ):
     for playlist in playlists_to_parse:
+        print(f"Parsing {playlist.title}")
         with open(playlist.filepath, 'r', encoding='utf-8') as playlist_file:
             playlist_file_lines = playlist_file.readlines()
             line_count = len(playlist_file_lines)
