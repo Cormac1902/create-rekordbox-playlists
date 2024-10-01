@@ -154,6 +154,16 @@ class TestMetadataAdapter(unittest.TestCase):
 
         self.assertEqual(test_value, test_metadata_adapter.get(test_key))
 
+    def test_when_load_metadata_is_called_then_metadata_is_updated_from_strategy(self):
+        test_strategy = MagicMock()
+        test_metadata_adapter = playlist_parser.MetadataAdapter(test_strategy)
+        test_key = 'test_key'
+        test_value = 'Test'
+        test_metadata = {test_key: test_value}
+        test_strategy.get_metadata = MagicMock(return_value=test_metadata)
+        test_metadata_adapter._load_metadata_attempted = False
+
+        self.assertEqual(test_value, test_metadata_adapter.get(test_key))
 
 
 #   pylint: enable=unused-argument
