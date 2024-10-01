@@ -15,8 +15,12 @@ class EnhancedMultichannelAudioFixer(PostProcessor):
         ):
             output_location = playlist_entry.file_location(transcodes_output_directory)
 
-            print(f"Fixing enhanced multichannel audio: {output_location}", flush=True)
-
             with open(output_location, 'r+b') as file:
                 file.seek(20)
-                file.write(bytes([0x01, 0x00]))
+
+                enhanced_multichannel_audio_fix_bytes = bytes([0x01, 0x00])
+
+                if bytes(file.read(2)) != enhanced_multichannel_audio_fix_bytes:
+                    print(f"Fixing enhanced multichannel audio: {output_location}", flush=True)
+                    file.seek(20)
+                    file.write(enhanced_multichannel_audio_fix_bytes)
