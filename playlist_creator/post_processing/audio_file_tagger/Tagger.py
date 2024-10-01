@@ -11,6 +11,11 @@ def _copy_tag(file: taglib.File, tag: str, playlist_entry: playlist_parser.Playl
         file.tags[tag] = [metadata_tag] if make_list else metadata_tag.split(';')
 
 
+def _get_tag(playlist_entry: playlist_parser.PlaylistEntry, tag: str, make_list: bool = True):
+    metadata_tag = playlist_entry.get_metadata_tag(tag)
+    return ([metadata_tag] if make_list else metadata_tag.split(';')) if metadata_tag else None
+
+
 class Tagger(PostProcessor):
     def __init__(self, successor: PostProcessor = None):
         super().__init__(successor)
@@ -23,11 +28,16 @@ class Tagger(PostProcessor):
                 and playlist_entry.conversion_type() is not audio_file_converter.ConversionType.NONE
         ):
             output_location = playlist_entry.file_location(transcodes_output_directory)
-            print(f"Updating tags: {output_location}", flush=True)
+
+            tags = {
+                key: value for key, value in {
+                    tag: _get_tag(playlist_entry, tag, tag not in ['artist', 'genre', 'producer'])
+                    for tag in playlist_parser.TAGS_TO_LOAD
+                }.items()
+                if value
+            }
+
             with taglib.File(output_location, save_on_exit=True) as file:
-                file.tags = dict()
-                for tag in playlist_parser.TAGS_TO_LOAD:
-                    _copy_tag(file,
-                              tag,
-                              playlist_entry,
-                              tag not in ['artist', 'genre', 'producer'])
+                if {key.lower(): value for key, value in file.tags.items()} != tags:
+                    print(f"Updating tags: {output_location}", flush=True)
+                    file.tags = tags
