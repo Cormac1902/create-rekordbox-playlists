@@ -2,7 +2,7 @@ import contextlib
 import multiprocessing
 import os
 
-from playlist_creator import audio_file_converter, configuration
+from playlist_creator import audio_file_converter
 from . import metadata_adapter
 from .PlaylistEntryData import PlaylistEntryData
 from .SoundFileAdapter import SoundFileAdapter

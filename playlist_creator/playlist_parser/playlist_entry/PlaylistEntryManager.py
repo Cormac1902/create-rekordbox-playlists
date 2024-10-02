@@ -1,6 +1,5 @@
 import multiprocessing.managers
 
-from playlist_creator import audio_file_converter
 from .PlaylistEntry import PlaylistEntry
 
 
