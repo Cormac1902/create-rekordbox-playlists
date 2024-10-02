@@ -56,6 +56,19 @@ class TestSoundFileAdapter(unittest.TestCase):
 
         test_soundfile_adapter._load_information_from_soundfile.assert_not_called()
 
+    def test_when_format_is_called_format_is_filled_from_soundfile(self):
+        with unittest.mock.patch(
+                'soundfile.SoundFile'
+        ) as mock_soundfile:
+            mock_soundfile.return_value.__enter__().format = 'mp3'
+            test_soundfile_adapter = playlist_parser.SoundFileAdapter(
+                config=configuration.Config(allowed_formats={'mp3'})
+            )
+            test_soundfile_adapter._load_information_attempted = False
+            os.path.exists = MagicMock(return_value=True)
+
+            self.assertEqual('mp3',test_soundfile_adapter.format)
+
     def test_when_soundfile_format_is_allowed_conversion_type_is_none(self):
         with unittest.mock.patch(
                 'soundfile.SoundFile'
