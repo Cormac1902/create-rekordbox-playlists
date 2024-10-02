@@ -56,6 +56,5 @@ class TestPlsWriterStrategy(unittest.TestCase):
         self.assertEqual(hash(playlist_writer.PlsWriterStrategy()), hash('pls'))
 
 
-
 if __name__ == '__main__':
     unittest.main()

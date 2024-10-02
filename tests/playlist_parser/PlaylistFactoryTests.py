@@ -1,18 +1,10 @@
 import os.path
-import threading
 import unittest
-from unittest.mock import MagicMock
 
 from playlist_creator import playlist_parser
 
 
 class TestPlaylistFactory(unittest.TestCase):
-    def test_lock_is_initialised(self):
-        test_lock = threading.Lock()
-        test_playlist_factory = playlist_parser.PlaylistFactory(test_lock)
-
-        self.assertEqual(test_lock, test_playlist_factory._lock)
-
     def test_playlists_is_initialised(self):
         test_playlist_factory = playlist_parser.PlaylistFactory()
 

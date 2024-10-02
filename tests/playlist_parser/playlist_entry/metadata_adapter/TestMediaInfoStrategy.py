@@ -3,6 +3,8 @@ from unittest.mock import MagicMock
 from playlist_creator import playlist_parser
 
 
+#   pylint: disable=too-few-public-methods
+
 class TestMediaInfoStrategy(playlist_parser.IMediaInfoStrategy):
     def __init__(self, **kwargs):
         super().__init__('', **kwargs)
@@ -26,3 +28,5 @@ class ConcreteTestMediaInfoStrategy(playlist_parser.IMediaInfoStrategy):
 
     def _get_metadata_from_cmd(self, cmd_output: str) -> dict:
         pass
+
+#   pylint: enable=too-few-public-methods

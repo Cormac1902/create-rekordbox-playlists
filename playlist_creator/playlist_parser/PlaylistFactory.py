@@ -4,6 +4,7 @@ import threading
 
 from .Playlist import Playlist
 
+
 class PlaylistFactory:
     def __init__(self, lock: threading.Lock = None):
         self._playlists: dict[str, Playlist] = {}
@@ -17,7 +18,7 @@ class PlaylistFactory:
     def _lock(self):
         return self.__lock if self.__lock else contextlib.nullcontext()
 
-    def add_playlist(self, directory, file, playlists_path = None):
+    def add_playlist(self, directory, file, playlists_path=None):
         if not file.endswith('.pls'):
             return
 

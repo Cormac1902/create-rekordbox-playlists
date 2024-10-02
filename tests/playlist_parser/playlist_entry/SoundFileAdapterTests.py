@@ -60,66 +60,71 @@ class TestSoundFileAdapter(unittest.TestCase):
         with unittest.mock.patch(
                 'soundfile.SoundFile'
         ) as mock_soundfile:
-            mock_soundfile.return_value.__enter__().format = 'mp3'
-            test_soundfile_adapter = playlist_parser.SoundFileAdapter(
-                config=configuration.Config(allowed_formats={'mp3'})
-            )
-            test_soundfile_adapter._load_information_attempted = False
-            os.path.exists = MagicMock(return_value=True)
+            with mock_soundfile.return_value as mock_soundfile_return:
+                mock_soundfile_return.format = 'mp3'
+                test_soundfile_adapter = playlist_parser.SoundFileAdapter(
+                    config=configuration.Config(allowed_formats={'mp3'})
+                )
+                test_soundfile_adapter._load_information_attempted = False
+                os.path.exists = MagicMock(return_value=True)
 
-            self.assertEqual('mp3',test_soundfile_adapter.format)
+                self.assertEqual('mp3', test_soundfile_adapter.format)
 
     def test_when_soundfile_format_is_allowed_conversion_type_is_none(self):
         with unittest.mock.patch(
                 'soundfile.SoundFile'
         ) as mock_soundfile:
-            mock_soundfile.return_value.__enter__().format = 'mp3'
-            test_soundfile_adapter = playlist_parser.SoundFileAdapter(
-                config=configuration.Config(allowed_formats={'mp3'})
-            )
-            test_soundfile_adapter._load_information_attempted = False
-            os.path.exists = MagicMock(return_value=True)
+            with mock_soundfile.return_value as mock_soundfile_return:
+                mock_soundfile_return.format = 'mp3'
+                test_soundfile_adapter = playlist_parser.SoundFileAdapter(
+                    config=configuration.Config(allowed_formats={'mp3'})
+                )
+                test_soundfile_adapter._load_information_attempted = False
+                os.path.exists = MagicMock(return_value=True)
 
-            self.assertEqual(audio_file_converter.ConversionType.NONE,
-                             test_soundfile_adapter.conversion_type)
+                self.assertEqual(audio_file_converter.ConversionType.NONE,
+                                 test_soundfile_adapter.conversion_type)
 
     def test_when_soundfile_format_is_not_allowed_conversion_type_contains_wav(self):
         with unittest.mock.patch(
                 'soundfile.SoundFile'
         ) as mock_soundfile:
-            mock_soundfile.return_value.__enter__().format = 'flac'
-            test_soundfile_adapter = playlist_parser.SoundFileAdapter(
-                config=configuration.Config(allowed_formats={'mp3'})
-            )
-            test_soundfile_adapter._load_information_attempted = False
-            os.path.exists = MagicMock(return_value=True)
+            with mock_soundfile.return_value as mock_soundfile_return:
+                mock_soundfile_return.format = 'flac'
+                test_soundfile_adapter = playlist_parser.SoundFileAdapter(
+                    config=configuration.Config(allowed_formats={'mp3'})
+                )
+                test_soundfile_adapter._load_information_attempted = False
+                os.path.exists = MagicMock(return_value=True)
 
-            self.assertIn(audio_file_converter.ConversionType.WAV,
-                          test_soundfile_adapter.conversion_type)
+                self.assertIn(audio_file_converter.ConversionType.WAV,
+                              test_soundfile_adapter.conversion_type)
 
     def test_when_soundfile_samplerate_is_over_threshold_conversion_type_is_downsample(self):
         with unittest.mock.patch(
                 'soundfile.SoundFile'
         ) as mock_soundfile:
-            mock_soundfile.return_value.__enter__().samplerate = 48001
-            test_soundfile_adapter = playlist_parser.SoundFileAdapter()
-            test_soundfile_adapter._load_information_attempted = False
-            os.path.exists = MagicMock(return_value=True)
+            with mock_soundfile.return_value as mock_soundfile_return:
+                mock_soundfile_return.samplerate = 48001
+                test_soundfile_adapter = playlist_parser.SoundFileAdapter()
+                test_soundfile_adapter._load_information_attempted = False
+                os.path.exists = MagicMock(return_value=True)
 
-            self.assertIn(audio_file_converter.ConversionType.DOWNSAMPLE,
-                          test_soundfile_adapter.conversion_type)
+                self.assertIn(audio_file_converter.ConversionType.DOWNSAMPLE,
+                              test_soundfile_adapter.conversion_type)
 
     def test_when_soundfile_subtype_is_PCM_24_conversion_type_is_BIT_24(self):
         with unittest.mock.patch(
                 'soundfile.SoundFile'
         ) as mock_soundfile:
-            mock_soundfile.return_value.__enter__().subtype = 'PCM_24'
-            test_soundfile_adapter = playlist_parser.SoundFileAdapter()
-            test_soundfile_adapter._load_information_attempted = False
-            os.path.exists = MagicMock(return_value=True)
+            with mock_soundfile.return_value as mock_soundfile_return:
+                mock_soundfile_return.subtype = 'PCM_24'
+                test_soundfile_adapter = playlist_parser.SoundFileAdapter()
+                test_soundfile_adapter._load_information_attempted = False
+                os.path.exists = MagicMock(return_value=True)
 
-            self.assertIn(audio_file_converter.ConversionType.BIT_24,
-                          test_soundfile_adapter.conversion_type)
+                self.assertIn(audio_file_converter.ConversionType.BIT_24,
+                              test_soundfile_adapter.conversion_type)
 
 
 if __name__ == '__main__':
