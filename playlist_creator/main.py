@@ -1,12 +1,13 @@
 import asyncio
+import concurrent.futures
 import itertools
 import multiprocessing
 import os
 import re
 import sys
+import threading
 import time
 from datetime import timedelta
-from typing import Optional
 
 import audio_file_converter
 import configuration
@@ -17,59 +18,56 @@ import post_processing
 _ALLOWED_FORMATS = {'MP3', 'WAV', 'ALAC', 'AIFF'}
 
 
-def get_playlist(directory, file) -> Optional[playlist_parser.Playlist]:
-    filepath = directory + os.sep + file
-
-    return playlist_parser.Playlist(file.removesuffix('.pls'), filepath) if filepath.endswith(
-        '.pls') else None
-
-
-def get_playlists(playlists_path) -> set[playlist_parser.Playlist]:
-    directory_playlists = set()
-
-    def add_to_playlists(playlist_path, playlist_file):
-        playlist = get_playlist(playlist_path, playlist_file)
-        if playlist is not None:
-            directory_playlists.add(playlist)
-
+def get_playlists(playlists_path, playlist_factory: playlist_parser.PlaylistFactory):
     if os.path.isdir(playlists_path):
         for path, directories, files in os.walk(playlists_path):
             for file in files:
-                add_to_playlists(path, file)
+                playlist_factory.add_playlist(path, file)
     elif os.path.isfile(playlists_path):
-        add_to_playlists(os.path.dirname(playlists_path), os.path.basename(playlists_path))
+        playlist_factory.add_playlist(
+            os.path.dirname(playlists_path), os.path.basename(playlists_path)
+        )
 
-    return directory_playlists
 
-
-def parse_playlists(
-        playlists_to_parse, _playlist_entry_factory: playlist_parser.PlaylistEntryFactory
+def parse_playlist(
+        playlist: playlist_parser.Playlist,
+        _playlist_entry_factory: playlist_parser.PlaylistEntryFactory
 ):
+    print(f"Parsing {playlist.title}")
+
     file_regex = re.compile(r'File\d+=(.*)')
     title_regex = re.compile(r'Title\d+=(.*)')
     length_regex = re.compile(r'Length\d+=(.*)')
 
-    def next_3_lines(_file):
-        return [line.strip() for line in itertools.islice(_file, 3)]
-
-    for playlist in playlists_to_parse:
-        print(f"Parsing {playlist.title}")
-        with open(playlist.filepath, 'r', encoding='utf-8') as playlist_file:
-            playlist_file.readline()
-            next_playlist_entry = next_3_lines(playlist_file)
-
-            while len(next_playlist_entry) > 2:
-                file = file_regex.match(next_playlist_entry[0]).group(1)
-                title = title_regex.match(next_playlist_entry[1]).group(1)
-                length = length_regex.match(next_playlist_entry[2]).group(1)
-                playlist.playlist_entries.append(
-                    _playlist_entry_factory.add_playlist_entry(
-                        playlist_parser.PlaylistEntryData(file, title, length)
-                    )
+    with open(playlist.filepath, 'r', encoding='utf-8') as playlist_file:
+        playlist_file.readline()
+        while (len(
+                next_playlist_entry := [
+                    line.strip() for line in itertools.islice(playlist_file, 3)
+                ]
+        )) > 2:
+            file = file_regex.match(next_playlist_entry[0]).group(1)
+            title = title_regex.match(next_playlist_entry[1]).group(1)
+            length = length_regex.match(next_playlist_entry[2]).group(1)
+            playlist.playlist_entries.append(
+                _playlist_entry_factory.add_playlist_entry(
+                    playlist_parser.PlaylistEntryData(file, title, length)
                 )
-                next_playlist_entry = next_3_lines(playlist_file)
+            )
 
-            print(f"Parsed {playlist.title}")
+        print(f"Parsed {playlist.title}")
+
+
+def parse_playlists(
+        playlist_factory: playlist_parser.PlaylistFactory,
+        _playlist_entry_factory: playlist_parser.PlaylistEntryFactory,
+        executor: concurrent.futures.ThreadPoolExecutor
+):
+    [
+        executor.submit(
+            parse_playlist, playlist, _playlist_entry_factory
+        ) for playlist in playlist_factory.playlists
+    ]
 
 
 def write_playlist(playlist_to_write: playlist_writer.PlaylistWriterContext):
@@ -151,15 +149,20 @@ def post_process_playlist_entries(playlist_entries: set[playlist_parser.Playlist
 
 
 async def main(config: configuration.Config):
-    playlists = get_playlists(config.playlists_directory)
+    playlist_factory = playlist_parser.PlaylistFactory(threading.Lock())
+
+    get_playlists(config.playlists_directory, playlist_factory)
 
     with playlist_parser.PlaylistEntryManager() as manager:
         playlist_entry_factory = playlist_parser.PlaylistEntryFactory(config, manager)
 
-        parse_playlists(playlists, playlist_entry_factory)
+        with concurrent.futures.ThreadPoolExecutor(config.max_parallel_tasks) as executor:
+            parse_playlists(playlist_factory, playlist_entry_factory, executor)
 
         with multiprocessing.Pool(config.max_parallel_tasks) as pool:
-            playlist_entries = write_playlists(playlists, playlist_entry_factory, config, pool)
+            playlist_entries = write_playlists(
+                playlist_factory.playlists, playlist_entry_factory, config, pool
+            )
 
             files_to_post_process, files_to_convert = set(), set()
             [
