@@ -17,7 +17,7 @@ class PlaylistFactory:
     def _lock(self):
         return self.__lock if self.__lock else contextlib.nullcontext()
 
-    def add_playlist(self, directory, file):
+    def add_playlist(self, directory, file, playlists_path):
         if not file.endswith('.pls'):
             return
 
@@ -26,4 +26,6 @@ class PlaylistFactory:
 
         with self._lock:
             if title not in self._playlists:
-                self._playlists[title] = Playlist(title, filepath)
+                self._playlists[title] = Playlist(
+                    title, filepath, str(os.path.relpath(directory, playlists_path))
+                )

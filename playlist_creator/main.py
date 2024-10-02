@@ -20,9 +20,10 @@ _ALLOWED_FORMATS = {'MP3', 'WAV', 'ALAC', 'AIFF'}
 
 def get_playlists(playlists_path, playlist_factory: playlist_parser.PlaylistFactory):
     if os.path.isdir(playlists_path):
-        for path, directories, files in os.walk(playlists_path):
-            for file in files:
-                playlist_factory.add_playlist(path, file)
+        [
+            [playlist_factory.add_playlist(path, file, playlists_path) for file in files]
+            for path, directories, files in os.walk(playlists_path)
+        ]
     elif os.path.isfile(playlists_path):
         playlist_factory.add_playlist(
             os.path.dirname(playlists_path), os.path.basename(playlists_path)
@@ -33,7 +34,7 @@ def parse_playlist(
         playlist: playlist_parser.Playlist,
         _playlist_entry_factory: playlist_parser.PlaylistEntryFactory
 ):
-    print(f"Parsing {playlist.title}")
+    print(f"Parsing {playlist.title_and_path}")
 
     file_regex = re.compile(r'File\d+=(.*)')
     title_regex = re.compile(r'Title\d+=(.*)')
@@ -55,7 +56,7 @@ def parse_playlist(
                 )
             )
 
-        print(f"Parsed {playlist.title}")
+        print(f"Parsed {playlist.title_and_path}")
 
 
 def parse_playlists(

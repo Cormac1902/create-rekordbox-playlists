@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 from playlist_creator import playlist_parser
 from .PlaylistWriterStrategy import PlaylistWriterStrategy
@@ -12,7 +13,10 @@ class PlsWriterStrategy(PlaylistWriterStrategy):
                        playlist: playlist_parser.Playlist,
                        playlists_output_directory: str,
                        transcodes_output_directory: str):
-        playlist_file = os.sep.join([playlists_output_directory, f"{playlist.title}.pls"])
+        pathlib.Path(
+            os.path.join(playlists_output_directory, playlist.path_from_playlists_directory)
+        ).mkdir(parents=True, exist_ok=True)
+        playlist_file = os.path.join(playlists_output_directory, f"{playlist.title_and_path}.pls")
         print(f"Writing playlist {playlist_file}")
 
         with open(playlist_file, mode='w', encoding="utf-8") as file:
