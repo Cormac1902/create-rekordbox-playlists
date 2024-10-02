@@ -1,4 +1,5 @@
 import asyncio
+import itertools
 import multiprocessing
 import os
 import re
@@ -44,20 +45,31 @@ def get_playlists(playlists_path) -> set[playlist_parser.Playlist]:
 def parse_playlists(
         playlists_to_parse, _playlist_entry_factory: playlist_parser.PlaylistEntryFactory
 ):
+    file_regex = re.compile(r'File\d+=(.*)')
+    title_regex = re.compile(r'Title\d+=(.*)')
+    length_regex = re.compile(r'Length\d+=(.*)')
+
+    def next_3_lines(_file):
+        return [line.strip() for line in itertools.islice(_file, 3)]
+
     for playlist in playlists_to_parse:
         print(f"Parsing {playlist.title}")
         with open(playlist.filepath, 'r', encoding='utf-8') as playlist_file:
-            playlist_file_lines = playlist_file.readlines()
-            line_count = len(playlist_file_lines)
-            for i in range(1, line_count - 4, 3):
-                file = re.compile(r'File\d+=(.*)').match(playlist_file_lines[i]).group(1)
-                title = re.compile(r'Title\d+=(.*)').match(playlist_file_lines[i + 1]).group(1)
-                length = re.compile(r'Length\d+=(.*)').match(playlist_file_lines[i + 2]).group(1)
+            playlist_file.readline()
+            next_playlist_entry = next_3_lines(playlist_file)
+
+            while len(next_playlist_entry) > 2:
+                file = file_regex.match(next_playlist_entry[0]).group(1)
+                title = title_regex.match(next_playlist_entry[1]).group(1)
+                length = length_regex.match(next_playlist_entry[2]).group(1)
                 playlist.playlist_entries.append(
                     _playlist_entry_factory.add_playlist_entry(
                         playlist_parser.PlaylistEntryData(file, title, length)
                     )
                 )
+                next_playlist_entry = next_3_lines(playlist_file)
+
+            print(f"Parsed {playlist.title}")
 
 
 def write_playlist(playlist_to_write: playlist_writer.PlaylistWriterContext):
