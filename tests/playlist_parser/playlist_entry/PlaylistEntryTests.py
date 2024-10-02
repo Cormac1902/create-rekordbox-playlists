@@ -68,6 +68,17 @@ class TestPlaylistEntry(unittest.TestCase):
 
         self.assertEqual(test_playlist_entry.title(), test_title)
 
+    def test_conversion_type_forwards_requests_to_soundfile_adapter(self):
+        test_soundfile_adapter = MagicMock()
+        test_playlist_entry = playlist_parser.PlaylistEntry(
+            soundfile_adapter=test_soundfile_adapter
+        )
+        test_soundfile_adapter.conversion_type = audio_file_converter.ConversionType.WAV
+
+        self.assertEqual(
+            audio_file_converter.ConversionType.WAV, test_playlist_entry.conversion_type()
+        )
+
     def test_when_conversion_type_is_none_conversion_type_is_none_returns_true(self):
         test_playlist_entry = playlist_parser.PlaylistEntry()
         test_playlist_entry.conversion_type = MagicMock(
