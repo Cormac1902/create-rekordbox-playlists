@@ -14,7 +14,7 @@ class TestMetadataAdapter(unittest.TestCase):
     def test_get_tag(self):
         test_tag = 'test_tag'
         test_value = 'Test'
-        test_tags = { test_tag: test_value }
+        test_tags = {test_tag: test_value}
 
         self.assertEqual(playlist_parser.get_tag(test_tags, test_tag), test_value)
 
@@ -134,7 +134,7 @@ class TestMetadataAdapter(unittest.TestCase):
         'title',
         new_callable=PropertyMock(return_value=test_title)
     )
-#   pylint: disable=too-many-arguments
+    #   pylint: disable=too-many-arguments
     def test_when_all_fields_have_value_then_formatted_filename_returns_correctly(
             self, disc, track, album_artist, album, title
     ):
@@ -144,7 +144,8 @@ class TestMetadataAdapter(unittest.TestCase):
             os.sep.join([self.test_album_artist, self.test_album, f"1-01 {self.test_title}"]),
             test_metadata_adapter.formatted_filename()
         )
-#   pylint: enable=too-many-arguments
+
+    #   pylint: enable=too-many-arguments
     def test_get_returns_from_metadata(self):
         test_metadata_adapter = playlist_parser.MetadataAdapter()
         test_key = 'test_key'

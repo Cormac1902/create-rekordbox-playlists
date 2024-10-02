@@ -9,7 +9,7 @@ from playlist_creator import audio_file_converter, configuration
 
 class SoundFileAdapter:
     def __init__(self,
-                 file = None,
+                 file=None,
                  lock: multiprocessing.Lock = None,
                  config: configuration.Config = configuration.Config()):
         self._conversion_type: audio_file_converter.ConversionType \

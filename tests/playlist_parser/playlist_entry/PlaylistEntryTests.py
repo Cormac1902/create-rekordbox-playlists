@@ -2,11 +2,9 @@
 
 import os
 import unittest
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock
 
-import soundfile
-
-from playlist_creator import audio_file_converter, configuration, playlist_parser
+from playlist_creator import audio_file_converter, playlist_parser
 
 
 class TestPlaylistEntry(unittest.TestCase):
@@ -35,15 +33,10 @@ class TestPlaylistEntry(unittest.TestCase):
         self.assertEqual(test_playlist_entry._metadata_adapter(), test_metadata_adapter)
         playlist_parser.metadata_adapter.MetadataAdapter.assert_called_once()
 
-    @patch.object(
-        playlist_parser.metadata_adapter.MetadataAdapter,
-        'contains_metadata',
-        new_callable=PropertyMock(return_value=True)
-    )
-    def test_metadata_successfully_loaded_forwards_requests_to_metadata_adapter(self,
-                                                                                contains_metadata):
+    def test_metadata_successfully_loaded_forwards_requests_to_metadata_adapter(self):
         test_playlist_entry = playlist_parser.PlaylistEntry()
-        test_metadata_adapter = playlist_parser.MetadataAdapter()
+        test_metadata_adapter = MagicMock()
+        test_metadata_adapter.contains_metadata = True
         playlist_parser.metadata_adapter.MetadataAdapter = MagicMock(
             return_value=test_metadata_adapter
         )
@@ -109,7 +102,9 @@ class TestPlaylistEntry(unittest.TestCase):
     def test_when_conversion_type_is_not_none_file_location_returns_transcoded_file(self):
         test_file = 'test'
         test_playlist_entry = playlist_parser.PlaylistEntry()
-        test_playlist_entry.conversion_type = MagicMock(return_value=audio_file_converter.ConversionType.WAV)
+        test_playlist_entry.conversion_type = MagicMock(
+            return_value=audio_file_converter.ConversionType.WAV
+        )
         test_playlist_entry.transcoded_file = MagicMock(return_value=test_file)
 
         self.assertEqual(test_file, test_playlist_entry.file_location(''))
@@ -138,7 +133,6 @@ class TestPlaylistEntry(unittest.TestCase):
         test_playlist_entry.transcoded_file = MagicMock(return_value=test_transcoded_file)
 
         self.assertFalse(test_playlist_entry.transcoded_file_exists(''))
-
 
     def test_get_metadata_forwards_requests_to_metadata_adapter(self):
         test_metadata_adapter = playlist_parser.MetadataAdapter()
@@ -231,7 +225,9 @@ class TestPlaylistEntry(unittest.TestCase):
     def test_equals(self):
         test_playlist_entry = playlist_parser.PlaylistEntry()
 
+        #   pylint: disable=use-implicit-booleaness-not-comparison
         self.assertFalse(test_playlist_entry == {})
+        #   pylint: enable=use-implicit-booleaness-not-comparison
 
     def test_hash(self):
         test_playlist_entry = playlist_parser.PlaylistEntry()
