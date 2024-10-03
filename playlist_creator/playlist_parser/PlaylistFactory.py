@@ -30,5 +30,8 @@ class PlaylistFactory:
                 self._playlists[title] = Playlist(
                     title,
                     str(filepath),
-                    str(os.path.relpath(directory, playlists_path)) if playlists_path else None
+                    str(
+                        os.path.relpath(
+                            directory, playlists_path)
+                    ) if playlists_path and playlists_path != directory else None
                 )
