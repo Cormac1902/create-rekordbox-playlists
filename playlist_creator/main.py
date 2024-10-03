@@ -1,5 +1,6 @@
 import asyncio
 import concurrent.futures
+import datetime
 import itertools
 import multiprocessing
 import os
@@ -7,7 +8,6 @@ import re
 import sys
 import threading
 import time
-from datetime import timedelta
 
 import audio_file_converter
 import configuration
@@ -108,13 +108,7 @@ def write_playlists(
             for playlist_to_write in playlists_to_write
         ]
     )
-    return pool.map_async(
-        get_metadata,
-        [playlist_entry
-         for playlist_entry
-         in _playlist_entry_factory.playlist_entries.values()
-         ]
-    )
+    return pool.map_async(get_metadata, list(_playlist_entry_factory.playlist_entries.values()))
 
 
 async def convert_files(playlist_entries: set[playlist_parser.PlaylistEntry],
@@ -131,7 +125,7 @@ async def convert_files(playlist_entries: set[playlist_parser.PlaylistEntry],
 def post_process_playlist_entries(playlist_entries: set[playlist_parser.PlaylistEntry],
                                   config: configuration.Config,
                                   pool: multiprocessing.Pool,
-                                  add_asynchronously = False):
+                                  add_asynchronously=False):
     post_processor = post_processing.Tagger(
         post_processing.EnhancedMultichannelAudioFixer()
     )
@@ -211,4 +205,4 @@ if __name__ == '__main__':
 
     finished_at = time.time()
     elapsed_time = finished_at - started_at
-    print(f"Done in {timedelta(seconds=elapsed_time)}")
+    print(f"Done in {datetime.timedelta(seconds=elapsed_time)}")
