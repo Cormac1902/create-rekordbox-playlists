@@ -6,7 +6,20 @@ from playlist_creator import playlist_parser, playlist_writer
 
 
 class TestPlsWriterStrategy(unittest.TestCase):
-    def test_get_writer_strategy_instantiates_strategy(self):
+    def test_when_playlist_has_path_from_playlists_directory_pls_writer_attempts_to_make_path(self):
+        test_pls_writer_strategy = playlist_writer.PlsWriterStrategy()
+        test_relative_path = 'test/'
+        test_root_path = '/test'
+        test_playlist = playlist_parser.Playlist('', path_from_playlists_directory=test_relative_path)
+
+        with unittest.mock.patch(
+                'pathlib.Path'
+        ) as mock_pathlib:
+            with patch("builtins.open", unittest.mock.mock_open(read_data="data")) as mock_open:
+                test_pls_writer_strategy.write_playlist(test_playlist, test_root_path, '')
+                mock_pathlib.assert_called_once_with(os.path.join(test_root_path, test_relative_path))
+
+    def test_when_write_playlist_is_called_pls_writer_writes_lines(self):
         test_pls_writer_strategy = playlist_writer.PlsWriterStrategy()
         test_title = 'Test title'
         test_filepath = '/test'

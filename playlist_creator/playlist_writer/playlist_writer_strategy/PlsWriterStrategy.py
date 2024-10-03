@@ -13,9 +13,10 @@ class PlsWriterStrategy(PlaylistWriterStrategy):
                        playlist: playlist_parser.Playlist,
                        playlists_output_directory: str,
                        transcodes_output_directory: str):
-        pathlib.Path(
-            os.path.join(playlists_output_directory, playlist.path_from_playlists_directory)
-        ).mkdir(parents=True, exist_ok=True)
+        if playlist.path_from_playlists_directory:
+            pathlib.Path(
+                os.path.join(playlists_output_directory, playlist.path_from_playlists_directory)
+            ).mkdir(parents=True, exist_ok=True)
         playlist_file = os.path.join(playlists_output_directory, f"{playlist.title_and_path}.pls")
         print(f"Writing playlist {playlist_file}")
 
