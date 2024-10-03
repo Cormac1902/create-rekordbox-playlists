@@ -24,7 +24,7 @@ def get_tag(tags, tag):
     return tags.get(tag) or tags.get(tag.upper())
 
 
-def try_run(cmd) -> str:
+def _try_run(cmd) -> str:
     try:
         output_bytes = subprocess.check_output(cmd, shell=True)
     except subprocess.CalledProcessError:
@@ -71,7 +71,7 @@ class IMediaInfoStrategy(ABC):
         if not shutil.which(self._cmd):
             return ''
 
-        return try_run(self._get_cmd(filename))
+        return _try_run(self._get_cmd(filename))
 
     def __hash__(self):
         return hash(self._cmd)
