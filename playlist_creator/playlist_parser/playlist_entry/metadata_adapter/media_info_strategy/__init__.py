@@ -1,4 +1,4 @@
-from .FfprobeStrategy import *
-from .IMediaInfoStrategy import *
-from .MediaInfoStrategy import *
-from .MediaInfoStrategyFactory import *
+from .FfprobeStrategy import FfprobeStrategy
+from .IMediaInfoStrategy import IMediaInfoStrategy, TAGS_TO_LOAD, get_tag
+from .MediaInfoStrategy import MEDIA_INFO_STRATEGY_FORMATS, MediaInfoStrategy
+from .MediaInfoStrategyFactory import MediaInfoStrategyFactory
