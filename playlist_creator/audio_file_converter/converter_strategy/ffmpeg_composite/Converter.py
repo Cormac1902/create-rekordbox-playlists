@@ -1,6 +1,8 @@
 import functools
-from ffmpeg.asyncio import FFmpeg
 from abc import ABC, abstractmethod
+
+from ffmpeg.asyncio import FFmpeg
+
 
 class Converter(ABC):
     @abstractmethod

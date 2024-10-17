@@ -5,6 +5,8 @@ from . import converter_strategy
 from .ConverterContext import ConverterContext
 
 
+#   pylint: disable=too-few-public-methods
+
 class Converter:
     limit: asyncio.Semaphore
     transcodes_output_directory: str
@@ -23,10 +25,12 @@ class Converter:
         return self.__limit if self.__limit else contextlib.nullcontext()
 
     async def convert_file(self, converter_context: ConverterContext):
-        if self.__limit and self._limit.locked():  # pragma: no cover
+        if self.__limit and self.__limit.locked():  # pragma: no cover
             print(f"Waiting to convert: {converter_context.playlist_entry.file()}", flush=True)
 
         async with self._limit:
             await converter_context.convert_playlist_entry(
                 self._converter_strategy, self.transcodes_output_directory
             )
+
+#   pylint: enable=too-few-public-methods

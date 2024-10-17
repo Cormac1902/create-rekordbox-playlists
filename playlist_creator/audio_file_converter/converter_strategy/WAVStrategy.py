@@ -9,6 +9,8 @@ from . import ffmpeg_composite
 from .ConverterStrategy import ConverterStrategy, RetryQuietlyError
 
 
+#   pylint: disable=too-few-public-methods
+
 class WAVStrategy(ConverterStrategy):
     def __init__(self, converter_factory: ffmpeg_composite.ConverterFactory = None, **kwargs):
         super().__init__(**kwargs)
@@ -49,7 +51,7 @@ class WAVStrategy(ConverterStrategy):
         try:
             await ffmpeg.execute()
         except UnicodeDecodeError as e:
-            raise RetryQuietlyError(e)
+            raise RetryQuietlyError(e) from e
 
     async def _prepare_converter(
             self, playlist_entry: playlist_parser.PlaylistEntry
@@ -73,3 +75,5 @@ class WAVStrategy(ConverterStrategy):
             )
 
         return converter
+
+#   pylint: enable=too-few-public-methods

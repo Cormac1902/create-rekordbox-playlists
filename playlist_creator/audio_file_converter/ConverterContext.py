@@ -27,17 +27,16 @@ class ConverterContext:
         except converter_strategy.RetryQuietlyError as e:
             if self.retried:
                 raise e
-            else:
-                self.retried = True
-                print(
-                    f"Error converting {self.playlist_entry.file()}",
-                    file=sys.stderr,
-                    flush=True
-                )
-                [print(f"{p}={getattr(e, p)}", file=sys.stderr, flush=True) for p in dir(e) if
-                 not p.startswith('_')]
-                print("Retrying quietly", flush=True)
-                await strategy.convert_playlist_entry(
-                    self.playlist_entry, transcodes_output_directory, True
-                )
 
+            self.retried = True
+            print(
+                f"Error converting {self.playlist_entry.file()}",
+                file=sys.stderr,
+                flush=True
+            )
+            [print(f"{p}={getattr(e, p)}", file=sys.stderr, flush=True) for p in dir(e) if
+             not p.startswith('_')]
+            print("Retrying quietly", flush=True)
+            await strategy.convert_playlist_entry(
+                self.playlist_entry, transcodes_output_directory, True
+            )
