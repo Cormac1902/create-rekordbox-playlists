@@ -53,7 +53,8 @@ class PlaylistEntry:
             self.__metadata_adapter = metadata_adapter.MetadataAdapter(
                 self._media_info_strategy_factory.get_strategy(
                     metadata_adapter.MediaInfoStrategy
-                    if self.format() in metadata_adapter.media_info_strategy.MEDIA_INFO_STRATEGY_FORMATS
+                    if self.format()
+                       in metadata_adapter.media_info_strategy.MEDIA_INFO_STRATEGY_FORMATS
                     else metadata_adapter.FfprobeStrategy
                 ) if self._media_info_strategy_factory else None,
                 self.file(),
