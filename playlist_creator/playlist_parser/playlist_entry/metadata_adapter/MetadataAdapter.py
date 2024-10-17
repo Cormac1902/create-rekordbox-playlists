@@ -52,16 +52,23 @@ class MetadataAdapter:
         track = self.track
         formatted_track = f"{track or 0:02d}"
 
+        def strip_slashes(string: str) -> str:
+            return (string
+                    .replace(os.sep, ' ')
+                    .replace('\\', ' ')
+                    .replace('/', ' ')
+                    ) if string else str()
+
         disc_and_track = '-'.join([str(disc), formatted_track]) if disc and track \
             else formatted_track if track \
             else None
 
         disc_and_track_and_title = ' '.join(
-            info for info in [disc_and_track, self.title] if info)
+            info for info in [disc_and_track, strip_slashes(self.title)] if info)
 
         filepath = os.sep.join(info for info in
-                               [self.album_artist,
-                                self.album,
+                               [strip_slashes(self.album_artist),
+                                strip_slashes(self.album),
                                 disc_and_track_and_title
                                 ] if info
                                )
