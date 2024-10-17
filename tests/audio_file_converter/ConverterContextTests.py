@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 from playlist_creator import audio_file_converter, playlist_parser
 from .converter_strategy import TestConverterStrategy
