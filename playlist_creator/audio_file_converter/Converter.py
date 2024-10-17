@@ -23,7 +23,7 @@ class Converter:
         return self.__limit if self.__limit else contextlib.nullcontext()
 
     async def convert_file(self, converter_context: ConverterContext):
-        if self._limit.locked():
+        if self.__limit and self._limit.locked():  # pragma: no cover
             print(f"Waiting to convert: {converter_context.playlist_entry.file()}", flush=True)
 
         async with self._limit:
