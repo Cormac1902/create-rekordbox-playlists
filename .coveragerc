@@ -2,3 +2,4 @@
 omit =
     playlist_creator/audio_file_converter/converter_strategy/ConverterStrategy.py
     playlist_creator/playlist_writer/playlist_writer_strategy/PlaylistWriterStrategy.py
+    playlist_creator/post_processing/PostProcessor.py

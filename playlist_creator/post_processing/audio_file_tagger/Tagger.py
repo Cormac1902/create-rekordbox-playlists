@@ -4,13 +4,6 @@ from playlist_creator import audio_file_converter, playlist_parser
 from ..PostProcessor import PostProcessor
 
 
-def _copy_tag(file: taglib.File, tag: str, playlist_entry: playlist_parser.PlaylistEntry,
-              make_list=True):
-    metadata_tag = playlist_entry.get_metadata_tag(tag)
-    if metadata_tag:
-        file.tags[tag] = [metadata_tag] if make_list else metadata_tag.split(';')
-
-
 def _get_tag(playlist_entry: playlist_parser.PlaylistEntry, tag: str, make_list: bool = True):
     metadata_tag = playlist_entry.get_metadata_tag(tag)
     return ([metadata_tag] if make_list else metadata_tag.split(';')) if metadata_tag else None
