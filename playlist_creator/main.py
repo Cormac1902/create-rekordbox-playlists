@@ -113,13 +113,16 @@ def write_playlists(
 
 async def convert_files(playlist_entries: set[playlist_parser.PlaylistEntry],
                         converter: audio_file_converter.Converter):
-    ffmpeg_tasks = {
-        asyncio.create_task(converter.convert_file(playlist_entry))
-        for playlist_entry
-        in playlist_entries
-    }
 
-    await asyncio.gather(*ffmpeg_tasks)
+
+    async with asyncio.TaskGroup() as task_group:
+        [
+            task_group.create_task(
+                converter.convert_file(audio_file_converter.ConverterContext(playlist_entry))
+            )
+            for playlist_entry
+            in playlist_entries
+        ]
 
 
 def post_process_playlist_entries(playlist_entries: set[playlist_parser.PlaylistEntry],
@@ -178,10 +181,19 @@ async def main(config: configuration.Config):
                 len(files_to_convert) > 0
             )
 
+            converter_strategy_factory = audio_file_converter.ConverterStrategyFactory()
+            converter_factory = audio_file_converter.ConverterFactory(asyncio.Lock())
+
             await convert_files(
                 files_to_convert,
-                audio_file_converter.Converter(config.max_parallel_tasks,
-                                               config.transcodes_output_directory)
+                audio_file_converter.Converter(
+                    asyncio.Semaphore(config.max_parallel_tasks),
+                    config.transcodes_output_directory,
+                    converter_strategy_factory.get_strategy(
+                        audio_file_converter.WAVStrategy,
+                        converter_factory=converter_factory
+                    )
+                )
             )
 
             post_process_playlist_entries(files_to_convert, config, pool)
