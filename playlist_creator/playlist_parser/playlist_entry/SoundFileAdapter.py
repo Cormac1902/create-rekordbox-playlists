@@ -1,10 +1,13 @@
 import contextlib
+import logging
 import multiprocessing
 import os
 
 import soundfile
 
 from playlist_creator import audio_file_converter, configuration
+
+logger = logging.getLogger(__name__)
 
 
 class SoundFileAdapter:
@@ -60,8 +63,7 @@ class SoundFileAdapter:
             if self._load_information_attempted:
                 return
 
-            if self._file:  # pragma: no cover
-                print(f"Determining conversion type for: {self._file}", flush=True)
+            logger.debug(f"Determining conversion type for: {self._file}")
 
             self._load_information_from_soundfile()
 

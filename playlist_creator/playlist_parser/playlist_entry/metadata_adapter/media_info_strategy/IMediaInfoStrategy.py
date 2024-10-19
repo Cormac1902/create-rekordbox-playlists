@@ -1,7 +1,7 @@
+import logging
 import os
 import shutil
 import subprocess
-import sys
 from abc import ABC, abstractmethod
 
 TAGS_TO_LOAD = [
@@ -18,6 +18,7 @@ TAGS_TO_LOAD = [
     'genre',
     'involvedpeople'
 ]
+logger = logging.getLogger(__name__)
 
 
 def get_tag(tags, tag):
@@ -28,7 +29,7 @@ def _try_run(cmd) -> str:
     try:
         output_bytes = subprocess.check_output(cmd, shell=True)
     except subprocess.CalledProcessError:
-        print(f"Failed to call {cmd}", file=sys.stderr, flush=True)
+        logger.error(f"Failed to call {cmd}")
         return ''
 
     return output_bytes.decode('utf-8')
@@ -48,9 +49,8 @@ class IMediaInfoStrategy(ABC):
         cmd_output = self._run_cmd(filename)
         tags = self._get_metadata_from_cmd(cmd_output)
 
-        if tags is None:  # pragma: no cover
-            if filename:
-                print(f"Failed to load metadata for: {filename}", file=sys.stderr, flush=True)
+        if tags is None:
+            logger.warning(f"Failed to load metadata for: {filename}")
         else:
             return {tag: self._get_tag(tags, tag) for tag in TAGS_TO_LOAD}
 

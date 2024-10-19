@@ -1,5 +1,9 @@
+import logging
+
 from playlist_creator import audio_file_converter, playlist_parser
 from ..PostProcessor import PostProcessor
+
+logger = logging.getLogger(__name__)
 
 
 class EnhancedMultichannelAudioFixer(PostProcessor):
@@ -21,6 +25,6 @@ class EnhancedMultichannelAudioFixer(PostProcessor):
                 enhanced_multichannel_audio_fix_bytes = bytes([0x01, 0x00])
 
                 if bytes(file.read(2)) != enhanced_multichannel_audio_fix_bytes:
-                    print(f"Fixing enhanced multichannel audio: {output_location}", flush=True)
+                    logger.info(f"Fixing enhanced multichannel audio: {output_location}")
                     file.seek(20)
                     file.write(enhanced_multichannel_audio_fix_bytes)

@@ -1,8 +1,10 @@
-import sys
+import logging
 from dataclasses import dataclass
 
 from playlist_creator import audio_file_converter, playlist_parser
 from . import converter_strategy
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -14,7 +16,7 @@ class ConverterContext:
                                      strategy: converter_strategy.ConverterStrategy,
                                      transcodes_output_directory):
         if audio_file_converter.ConversionType.NONE in self.playlist_entry.conversion_type():
-            print(f"No processing needed for: {self.playlist_entry.file()}", flush=True)
+            logging.debug(f"No processing needed for: {self.playlist_entry.file()}")
             return
 
         if not self.playlist_entry.metadata_successfully_loaded():
@@ -29,14 +31,9 @@ class ConverterContext:
                 raise e
 
             self.retried = True
-            print(
-                f"Error converting {self.playlist_entry.file()}",
-                file=sys.stderr,
-                flush=True
-            )
-            [print(f"{p}={getattr(e, p)}", file=sys.stderr, flush=True) for p in dir(e) if
-             not p.startswith('_')]
-            print("Retrying quietly", flush=True)
+            logger.warning(f"Error converting {self.playlist_entry.file()}")
+            [logger.debug(f"{p}={getattr(e, p)}") for p in dir(e) if not p.startswith('_')]
+            logger.warning("Retrying quietly")
             await strategy.convert_playlist_entry(
                 self.playlist_entry, transcodes_output_directory, True
             )

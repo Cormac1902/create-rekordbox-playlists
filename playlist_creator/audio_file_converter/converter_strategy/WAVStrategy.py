@@ -1,4 +1,5 @@
 import functools
+import logging
 import os
 import pathlib
 
@@ -7,6 +8,8 @@ from ffmpeg.asyncio import FFmpeg
 from playlist_creator import audio_file_converter, playlist_parser
 from . import ffmpeg_composite
 from .ConverterStrategy import ConverterStrategy, RetryQuietlyError
+
+logger = logging.getLogger(__name__)
 
 
 #   pylint: disable=too-few-public-methods
@@ -42,11 +45,11 @@ class WAVStrategy(ConverterStrategy):
 
         @ffmpeg.on("start")
         def on_start(_):
-            print(f"{converter.message()}: {playlist_entry.file()}", flush=True)
+            logger.info(f"{converter.message()}: {playlist_entry.file()}")
 
         @ffmpeg.on("completed")
         def on_completed():
-            print(f"Converted: {playlist_entry.file()}", flush=True)
+            logger.info(f"Converted: {playlist_entry.file()}")
 
         try:
             await ffmpeg.execute()

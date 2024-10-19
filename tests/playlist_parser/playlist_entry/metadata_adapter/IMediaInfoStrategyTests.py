@@ -49,11 +49,17 @@ class TestIMediaInfoStrategy(unittest.TestCase):
         )
 
     def test_get_metadata_returns_empty_dict_if_metadata_is_empty(self):
+        import logging
+
+        logging.basicConfig(level=logging.ERROR)
+
         test_media_info_strategy = ConcreteTestMediaInfoStrategy()
         os.path.exists = MagicMock(return_value=True)
         test_media_info_strategy._get_metadata_from_cmd.return_value = None
 
         self.assertEqual({}, test_media_info_strategy.get_metadata(''))
+
+        logging.basicConfig(level=logging.WARNING)
 
 
 if __name__ == '__main__':

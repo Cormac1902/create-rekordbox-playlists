@@ -1,8 +1,11 @@
 import asyncio
 import contextlib
+import logging
 
 from . import converter_strategy
 from .ConverterContext import ConverterContext
+
+logger = logging.getLogger(__name__)
 
 
 #   pylint: disable=too-few-public-methods
@@ -26,7 +29,7 @@ class Converter:
 
     async def convert_file(self, converter_context: ConverterContext):
         if self.__limit and self.__limit.locked():  # pragma: no cover
-            print(f"Waiting to convert: {converter_context.playlist_entry.file()}", flush=True)
+            logger.debug(f"Waiting to convert: {converter_context.playlist_entry.file()}")
 
         async with self._limit:
             await converter_context.convert_playlist_entry(

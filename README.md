@@ -26,6 +26,5 @@ Cormac Geraghty
 
 ## Roadmap
 
-1. Standardise logging
 1. Benchmark and improve parallelism
 1. Investigate caching information about already-processed files and only updating tags/fixing enhanced multichannel audio where necessary
