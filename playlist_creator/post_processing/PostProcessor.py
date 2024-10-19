@@ -8,8 +8,8 @@ class PostProcessor:
         self._successor: PostProcessor = successor
 
     def process_chain(self,
-                playlist_entry: playlist_parser.PlaylistEntry,
-                transcodes_output_directory: str):
+                      playlist_entry: playlist_parser.PlaylistEntry,
+                      transcodes_output_directory: str):
         self.process(playlist_entry, transcodes_output_directory)
 
         if self._successor:

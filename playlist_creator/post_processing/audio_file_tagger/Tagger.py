@@ -1,7 +1,11 @@
+import logging
+
 import taglib
 
 from playlist_creator import audio_file_converter, playlist_parser
 from ..PostProcessor import PostProcessor
+
+logger = logging.getLogger(__name__)
 
 
 def _get_tag(playlist_entry: playlist_parser.PlaylistEntry, tag: str, make_list: bool = True):
@@ -32,5 +36,5 @@ class Tagger(PostProcessor):
 
             with taglib.File(output_location, save_on_exit=True) as file:
                 if {key.lower(): value for key, value in file.tags.items()} != tags:
-                    print(f"Updating tags: {output_location}", flush=True)
+                    logger.info(f"Updating tags: {output_location}")
                     file.tags = tags

@@ -1,13 +1,41 @@
+import logging.handlers
+import os
+import pathlib
+import sys
+
+logs_directory = 'logs'
+
+pathlib.Path(logs_directory).mkdir(parents=True, exist_ok=True)
+
+log_filename = os.path.join(logs_directory, 'playlist_creator.log')
+log_filename_exists = os.path.isfile(log_filename)
+rotating_file_handler = logging.handlers.RotatingFileHandler(
+    log_filename, backupCount=10, encoding='utf-8'
+)
+rotating_file_handler.setLevel(logging.DEBUG)
+
+std_out_handler = logging.StreamHandler(sys.stdout)
+std_out_handler.setLevel(logging.INFO)
+std_out_handler.addFilter(lambda record: record.levelno <= logging.INFO)
+
+std_err_handler = logging.StreamHandler()
+std_err_handler.setLevel(logging.WARNING)
+
 import asyncio
 import concurrent.futures
 import datetime
 import itertools
+import logging.handlers
 import multiprocessing
-import os
 import re
-import sys
 import threading
 import time
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s:%(levelname)s:%(name)s: %(message)s',
+    handlers=[rotating_file_handler, std_out_handler, std_err_handler]
+)
 
 import audio_file_converter
 import configuration
@@ -16,6 +44,7 @@ import playlist_writer
 import post_processing
 
 _ALLOWED_FORMATS = {'MP3', 'WAV', 'ALAC', 'AIFF'}
+logger = logging.getLogger(__name__)
 
 
 def get_playlists(playlists_path, playlist_factory: playlist_parser.PlaylistFactory):
@@ -34,7 +63,7 @@ def parse_playlist(
         playlist: playlist_parser.Playlist,
         _playlist_entry_factory: playlist_parser.PlaylistEntryFactory
 ):
-    print(f"Parsing {playlist.title_and_path}")
+    logger.info(f"Parsing {playlist.title_and_path}")
 
     file_regex = re.compile(r'File\d+=(.*)')
     title_regex = re.compile(r'Title\d+=(.*)')
@@ -56,7 +85,7 @@ def parse_playlist(
                 )
             )
 
-        print(f"Parsed {playlist.title_and_path}")
+        logger.info(f"Parsed {playlist.title_and_path}")
 
 
 def parse_playlists(
@@ -113,8 +142,6 @@ def write_playlists(
 
 async def convert_files(playlist_entries: set[playlist_parser.PlaylistEntry],
                         converter: audio_file_converter.Converter):
-
-
     async with asyncio.TaskGroup() as task_group:
         [
             task_group.create_task(
@@ -200,6 +227,9 @@ async def main(config: configuration.Config):
 
 
 if __name__ == '__main__':
+    if log_filename_exists:
+        rotating_file_handler.doRollover()
+
     started_at = time.time()
 
     max_parallel_tasks = os.cpu_count()
@@ -217,4 +247,4 @@ if __name__ == '__main__':
 
     finished_at = time.time()
     elapsed_time = finished_at - started_at
-    print(f"Done in {datetime.timedelta(seconds=elapsed_time)}")
+    logger.info(f"Done in {datetime.timedelta(seconds=elapsed_time)}")

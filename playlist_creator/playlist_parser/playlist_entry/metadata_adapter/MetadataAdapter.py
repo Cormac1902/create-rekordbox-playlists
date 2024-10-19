@@ -1,4 +1,5 @@
 import contextlib
+import logging
 import multiprocessing
 import os
 import sys
@@ -6,6 +7,8 @@ import sys
 from pathvalidate import sanitize_filepath
 
 from . import media_info_strategy
+
+logger = logging.getLogger(__name__)
 
 
 class MetadataAdapter:
@@ -88,12 +91,7 @@ class MetadataAdapter:
         if key in metadata:
             return metadata.get(key)
 
-        if self._filename:  # pragma: no cover
-            print(
-                f"{self._filename}'s metadata does not contain the {key} tag",
-                file=sys.stderr,
-                flush=True
-            )
+        logger.warning(f"{self._filename}'s metadata does not contain the {key} tag")
 
         return None
 
@@ -118,10 +116,8 @@ class MetadataAdapter:
             try:
                 return int(number.rsplit('/')[0]) or int(number)
             except ValueError:
-                print(
-                    f"Could not fetch {key} for {self._filename}. Number fetched: {number}",
-                    file=sys.stderr,
-                    flush=True
+                logger.warning(
+                    f"Could not fetch {key} for {self._filename}. Number fetched: {number}"
                 )
 
         return None
