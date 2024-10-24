@@ -1,41 +1,14 @@
-import logging.handlers
-import os
-import pathlib
-import sys
-
-logs_directory = 'logs'
-
-pathlib.Path(logs_directory).mkdir(parents=True, exist_ok=True)
-
-log_filename = os.path.join(logs_directory, 'playlist_creator.log')
-log_filename_exists = os.path.isfile(log_filename)
-rotating_file_handler = logging.handlers.RotatingFileHandler(
-    log_filename, backupCount=10, encoding='utf-8'
-)
-rotating_file_handler.setLevel(logging.DEBUG)
-
-std_out_handler = logging.StreamHandler(sys.stdout)
-std_out_handler.setLevel(logging.INFO)
-std_out_handler.addFilter(lambda record: record.levelno <= logging.INFO)
-
-std_err_handler = logging.StreamHandler()
-std_err_handler.setLevel(logging.WARNING)
-
 import asyncio
 import concurrent.futures
 import datetime
 import itertools
 import logging.handlers
 import multiprocessing
+import os
 import re
+import sys
 import threading
 import time
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s:%(levelname)s:%(name)s: %(message)s',
-    handlers=[rotating_file_handler, std_out_handler, std_err_handler]
-)
 
 import audio_file_converter
 import configuration
@@ -174,64 +147,86 @@ def post_process_playlist_entries(playlist_entries: set[playlist_parser.Playlist
 
 
 async def main(config: configuration.Config):
+    started_at = time.time()
+
+    queue = multiprocessing.Manager().Queue()
+
+    configuration.process_logging_configurer(queue)
+
+    logging_listener_process = multiprocessing.Process(
+        target=configuration.logger_listener_process,
+        args=(queue, configuration.logging_listener_configurer)
+    )
+
+    logging_listener_process.start()
+
     playlist_factory = playlist_parser.PlaylistFactory(threading.Lock())
 
     get_playlists(config.playlists_directory, playlist_factory)
 
-    with playlist_parser.PlaylistEntryManager() as manager:
-        playlist_entry_factory = playlist_parser.PlaylistEntryFactory(config, manager)
+    manager = playlist_parser.PlaylistEntryManager()
 
-        with concurrent.futures.ThreadPoolExecutor(config.max_parallel_tasks) as executor:
-            parse_playlists(playlist_factory, playlist_entry_factory, executor)
+    manager.start(configuration.process_logging_configurer, (queue,))
 
-        with multiprocessing.Pool(config.max_parallel_tasks) as pool:
-            playlist_entries = write_playlists(
-                playlist_factory.playlists, playlist_entry_factory, config, pool
-            )
+    playlist_entry_factory = playlist_parser.PlaylistEntryFactory(config, manager)
 
-            files_to_post_process, files_to_convert = set(), set()
-            [
-                (
-                    files_to_post_process
-                    if playlist_entry.transcoded_file_exists(config.transcodes_output_directory)
-                    else files_to_convert
-                ).add(playlist_entry)
-                for playlist_entry
-                in playlist_entries.get()
-                if not playlist_entry.conversion_type_is_none()
-            ]
+    with concurrent.futures.ThreadPoolExecutor(config.max_parallel_tasks) as executor:
+        parse_playlists(playlist_factory, playlist_entry_factory, executor)
 
-            post_process_playlist_entries(
-                files_to_post_process,
-                config,
-                pool,
-                len(files_to_convert) > 0
-            )
+    with multiprocessing.Pool(
+            config.max_parallel_tasks, configuration.process_logging_configurer, (queue,)
+    ) as pool:
+        playlist_entries = write_playlists(
+            playlist_factory.playlists, playlist_entry_factory, config, pool
+        )
 
-            converter_strategy_factory = audio_file_converter.ConverterStrategyFactory()
-            converter_factory = audio_file_converter.ConverterFactory(asyncio.Lock())
+        files_to_post_process, files_to_convert = set(), set()
+        [
+            (
+                files_to_post_process
+                if playlist_entry.transcoded_file_exists(config.transcodes_output_directory)
+                else files_to_convert
+            ).add(playlist_entry)
+            for playlist_entry
+            in playlist_entries.get()
+            if not playlist_entry.conversion_type_is_none()
+        ]
 
-            await convert_files(
-                files_to_convert,
-                audio_file_converter.Converter(
-                    asyncio.Semaphore(config.max_parallel_tasks),
-                    config.transcodes_output_directory,
-                    converter_strategy_factory.get_strategy(
-                        audio_file_converter.WAVStrategy,
-                        converter_factory=converter_factory
-                    )
+        post_process_playlist_entries(
+            files_to_post_process,
+            config,
+            pool,
+            len(files_to_convert) > 0
+        )
+
+        converter_strategy_factory = audio_file_converter.ConverterStrategyFactory()
+        converter_factory = audio_file_converter.ConverterFactory(asyncio.Lock())
+
+        await convert_files(
+            files_to_convert,
+            audio_file_converter.Converter(
+                asyncio.Semaphore(config.max_parallel_tasks),
+                config.transcodes_output_directory,
+                converter_strategy_factory.get_strategy(
+                    audio_file_converter.WAVStrategy,
+                    converter_factory=converter_factory
                 )
             )
+        )
 
-            post_process_playlist_entries(files_to_convert, config, pool)
+        post_process_playlist_entries(files_to_convert, config, pool)
+
+    finished_at = time.time()
+    elapsed_time = finished_at - started_at
+
+    logger.info(f"Done in {datetime.timedelta(seconds=elapsed_time)}")
+
+    queue.put_nowait(None)
+    logging_listener_process.join()
+    manager.shutdown()
 
 
 if __name__ == '__main__':
-    if log_filename_exists:
-        rotating_file_handler.doRollover()
-
-    started_at = time.time()
-
     max_parallel_tasks = os.cpu_count()
 
     if len(sys.argv) > 4:
@@ -244,7 +239,3 @@ if __name__ == '__main__':
     )
 
     asyncio.run(main(config_argv))
-
-    finished_at = time.time()
-    elapsed_time = finished_at - started_at
-    logger.info(f"Done in {datetime.timedelta(seconds=elapsed_time)}")
